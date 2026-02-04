@@ -12,6 +12,7 @@ require_once __DIR__ . '/TestRunner.php';
 require_once __DIR__ . '/AuthenticationTest.php';
 require_once __DIR__ . '/ReservationTest.php';
 require_once __DIR__ . '/PaymentTest.php';
+require_once __DIR__ . '/SecurityTest.php';
 
 class TestSuite {
     private $suites = [];
@@ -45,7 +46,7 @@ class TestSuite {
         echo "║             PARKALOT SYSTEM - AUTOMATED TEST SUITE                 ║\n";
         echo "║                                                                    ║\n";
         echo "║        Testing Framework: Custom PHP Unit Testing Framework        ║\n";
-        echo "║        Test Categories: Authentication, Reservation, Payment       ║\n";
+        echo "║     Test Categories: Auth, Reservation, Payment, Security          ║\n";
         echo "║                                                                    ║\n";
         echo "╚════════════════════════════════════════════════════════════════════╝\n";
         echo "\n";
@@ -70,6 +71,7 @@ class TestSuite {
         echo "    - AuthenticationTest (8 tests)\n";
         echo "    - ReservationTest (7 tests)\n";
         echo "    - PaymentTest (8 tests)\n";
+        echo "    - SecurityTest (18 tests - STRIDE verification)\n";
         echo "\n";
         echo "══════════════════════════════════════════════════════════════════════\n";
         echo "\n";
@@ -82,5 +84,6 @@ if (php_sapi_name() === 'cli') {
     $suite->addSuite(new AuthenticationTest());
     $suite->addSuite(new ReservationTest());
     $suite->addSuite(new PaymentTest());
+    $suite->addSuite(new SecurityTest());
     $suite->run();
 }
