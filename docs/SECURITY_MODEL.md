@@ -243,12 +243,47 @@ header("Content-Security-Policy: default-src 'self'");
 
 ## 6. Risk Assessment Matrix
 
-| Risk Level | Count | Examples |
-|------------|-------|----------|
-| 🔴 CRITICAL | 2 | SQL Injection, Password Exposure |
-| 🟠 HIGH | 8 | Session Hijacking, XSS, CSRF |
-| 🟡 MEDIUM | 6 | Account Impersonation, Error Leakage |
-| 🟢 LOW | 2 | Sensitive Data in URLs |
+### 6.1 Risk Scoring Methodology
+
+| Factor | Scale | Description |
+|--------|-------|-------------|
+| **Likelihood** | 1-5 | Probability of occurrence (1=Rare, 5=Almost Certain) |
+| **Impact** | 1-5 | Business impact if exploited (1=Negligible, 5=Catastrophic) |
+| **Risk Score** | L × I | Likelihood × Impact (1-25) |
+
+### 6.2 Risk Level Definitions
+
+| Level | Score Range | Action Required |
+|-------|-------------|-----------------|
+| 🔴 CRITICAL | 20-25 | Immediate remediation required |
+| 🟠 HIGH | 12-19 | Remediate within 7 days |
+| 🟡 MEDIUM | 6-11 | Remediate within 30 days |
+| 🟢 LOW | 1-5 | Accept or remediate as resources allow |
+
+### 6.3 Detailed Risk Assessment
+
+| Threat ID | Threat | Likelihood | Impact | Score | Level | Status |
+|-----------|--------|------------|--------|-------|-------|--------|
+| T-001 | SQL Injection | 4 | 5 | 20 | 🔴 CRITICAL | ✅ Mitigated |
+| I-001 | Password Exposure | 4 | 5 | 20 | 🔴 CRITICAL | ✅ Mitigated |
+| S-002 | Session Hijacking | 3 | 5 | 15 | 🟠 HIGH | ✅ Mitigated |
+| T-002 | XSS Attacks | 3 | 4 | 12 | 🟠 HIGH | ✅ Mitigated |
+| S-004 | CSRF Attacks | 3 | 4 | 12 | 🟠 HIGH | ✅ Mitigated |
+| S-001 | Brute Force | 4 | 3 | 12 | 🟠 HIGH | ✅ Mitigated |
+| E-002 | Privilege Escalation | 2 | 5 | 10 | 🟡 MEDIUM | ✅ Mitigated |
+| D-001 | Login Flooding | 3 | 3 | 9 | 🟡 MEDIUM | ✅ Mitigated |
+| I-002 | Error Leakage | 3 | 2 | 6 | 🟡 MEDIUM | ✅ Mitigated |
+| I-004 | Data in URLs | 2 | 2 | 4 | 🟢 LOW | ✅ Mitigated |
+
+### 6.4 Risk Summary
+
+| Risk Level | Count | Percentage |
+|------------|-------|------------|
+| 🔴 CRITICAL | 2 | 11% |
+| 🟠 HIGH | 4 | 22% |
+| 🟡 MEDIUM | 3 | 17% |
+| 🟢 LOW | 1 | 6% |
+| **Total Mitigated** | **18** | **100%** |
 
 **All identified risks have been mitigated** ✅
 
@@ -258,29 +293,108 @@ header("Content-Security-Policy: default-src 'self'");
 
 Despite comprehensive security measures, the following residual risks remain:
 
-| Risk | Likelihood | Impact | Mitigation Plan |
-|------|------------|--------|-----------------|
-| Zero-day vulnerabilities in dependencies | Low | High | Regular updates, security monitoring |
-| Social engineering attacks | Medium | Medium | User education, 2FA consideration |
-| Insider threats | Low | High | Activity logging, role separation |
-| DDoS attacks | Medium | High | Cloud-based DDoS protection (future) |
+| Risk | Likelihood | Impact | Score | Mitigation Plan |
+|------|------------|--------|-------|-----------------|
+| Zero-day vulnerabilities | 2 | 4 | 8 | Regular updates, security monitoring |
+| Social engineering | 3 | 3 | 9 | User education, 2FA consideration |
+| Insider threats | 2 | 4 | 8 | Activity logging, role separation |
+| DDoS attacks | 3 | 4 | 12 | Cloud-based DDoS protection (future) |
 
 ---
 
 ## 8. Compliance Considerations
 
-### 8.1 GDPR Compliance
+### 8.1 GDPR Compliance (General Data Protection Regulation)
 
-- ✅ Data minimization: Only essential data collected
-- ✅ Purpose limitation: Data used only for stated purposes
-- ✅ Storage limitation: Session data expires after 1 hour
-- ✅ Security: Encryption in transit (HTTPS recommended)
+#### 8.1.1 Data Protection Principles
 
-### 8.2 PCI DSS Considerations
+| Principle | Requirement | Implementation | Status |
+|-----------|-------------|----------------|--------|
+| **Lawfulness** | Legal basis for processing | User consent at registration | ✅ |
+| **Purpose Limitation** | Data used only for stated purposes | Parking management only | ✅ |
+| **Data Minimization** | Collect only necessary data | Essential fields only | ✅ |
+| **Accuracy** | Keep data accurate and up-to-date | User profile editing | ✅ |
+| **Storage Limitation** | Don't keep data longer than needed | Session timeout (1 hour) | ✅ |
+| **Integrity & Confidentiality** | Protect against unauthorized access | Encryption, access controls | ✅ |
+| **Accountability** | Demonstrate compliance | Audit logging | ✅ |
 
-- ✅ No storage of full card numbers
-- ✅ Payment processing via secure third-party (Stripe integration ready)
-- ✅ Access controls implemented
+#### 8.1.2 Data Subject Rights
+
+| Right | Description | Implementation |
+|-------|-------------|----------------|
+| **Access** | Users can request their data | Profile view functionality |
+| **Rectification** | Users can correct their data | Profile edit functionality |
+| **Erasure** | Right to be forgotten | Account deletion (admin) |
+| **Portability** | Export data in common format | JSON export capability |
+| **Object** | Object to processing | Unsubscribe options |
+
+#### 8.1.3 Technical Measures
+
+```
+Implementation: config/compliance.php
+├── Data encryption at rest (future)
+├── Data encryption in transit (HTTPS)
+├── Access logging and audit trails
+├── Pseudonymization where possible
+└── Regular security assessments
+```
+
+### 8.2 PCI DSS Compliance (Payment Card Industry Data Security Standard)
+
+#### 8.2.1 Requirements Mapping
+
+| Requirement | Description | Implementation | Status |
+|-------------|-------------|----------------|--------|
+| **Req 1** | Install and maintain firewall | Server-level configuration | ⚙️ Infrastructure |
+| **Req 2** | No vendor-supplied defaults | Custom configurations | ✅ |
+| **Req 3** | Protect stored cardholder data | No card data stored | ✅ N/A |
+| **Req 4** | Encrypt transmission | HTTPS enforcement | ✅ |
+| **Req 5** | Protect against malware | Server-level AV | ⚙️ Infrastructure |
+| **Req 6** | Develop secure systems | STRIDE analysis, secure coding | ✅ |
+| **Req 7** | Restrict access | Role-based access control | ✅ |
+| **Req 8** | Identify and authenticate | User authentication system | ✅ |
+| **Req 9** | Restrict physical access | N/A (cloud deployment) | ⚙️ Infrastructure |
+| **Req 10** | Track and monitor access | Activity logging | ✅ |
+| **Req 11** | Regularly test security | Automated security tests | ✅ |
+| **Req 12** | Maintain security policy | This document | ✅ |
+
+#### 8.2.2 Payment Security Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    PAYMENT FLOW (PCI DSS Compliant)             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   Customer        ParkaLot System         Payment Gateway       │
+│      │                  │                       │               │
+│      │─── Payment ─────▶│                       │               │
+│      │    Request       │                       │               │
+│      │                  │                       │               │
+│      │                  │─── Tokenized ────────▶│               │
+│      │                  │    Request            │               │
+│      │                  │                       │               │
+│      │                  │◀── Payment ───────────│               │
+│      │                  │    Confirmation       │               │
+│      │                  │                       │               │
+│      │◀── Receipt ──────│                       │               │
+│      │    (No card      │                       │               │
+│      │     data)        │                       │               │
+│                                                                 │
+│   ⚠️ NO CARD DATA STORED IN PARKALOT SYSTEM                    │
+│   ✅ Only transaction IDs and confirmation codes stored        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 8.3 Compliance Verification
+
+| Compliance Area | Tests | Location |
+|-----------------|-------|----------|
+| GDPR Data Minimization | Verify minimal data collection | tests/SecurityTest.php |
+| GDPR Access Controls | Verify role-based access | tests/SecurityTest.php |
+| PCI DSS Req 6 | Secure coding verification | tests/SecurityTest.php |
+| PCI DSS Req 8 | Authentication tests | tests/AuthenticationTest.php |
+| PCI DSS Req 10 | Audit logging tests | tests/SecurityTest.php |
 
 ---
 

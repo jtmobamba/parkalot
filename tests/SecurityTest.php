@@ -238,6 +238,125 @@ class SecurityTest {
                 'API should verify user_id in session');
             return true;
         });
+
+        // ═══════════════════════════════════════════════════════════════
+        // COMPLIANCE TESTS (GDPR & PCI DSS)
+        // ═══════════════════════════════════════════════════════════════
+
+        // GDPR-001: Data Minimization
+        $this->runner->addTest('GDPR-001: Data minimization configuration exists', function() {
+            require_once __DIR__ . '/../config/compliance.php';
+            assertTrue(defined('GDPR_REQUIRED_USER_FIELDS'), 'GDPR required fields should be defined');
+            assertTrue(is_array(GDPR_REQUIRED_USER_FIELDS), 'GDPR required fields should be an array');
+            assertTrue(count(GDPR_REQUIRED_USER_FIELDS) <= 10, 'Should collect minimal user data');
+            return true;
+        });
+
+        // GDPR-002: Data Retention
+        $this->runner->addTest('GDPR-002: Data retention periods are defined', function() {
+            require_once __DIR__ . '/../config/compliance.php';
+            assertTrue(defined('GDPR_SESSION_DATA_RETENTION'), 'Session retention should be defined');
+            assertTrue(defined('GDPR_ACTIVITY_LOG_RETENTION'), 'Log retention should be defined');
+            assertTrue(GDPR_SESSION_DATA_RETENTION <= 7, 'Session data should not be retained > 7 days');
+            return true;
+        });
+
+        // GDPR-003: User Data Export
+        $this->runner->addTest('GDPR-003: User data export function exists', function() {
+            require_once __DIR__ . '/../config/compliance.php';
+            assertTrue(class_exists('GDPRCompliance'), 'GDPRCompliance class should exist');
+            assertTrue(method_exists('GDPRCompliance', 'exportUserData'), 'Export function should exist');
+
+            // Test export
+            $testData = ['full_name' => 'Test User', 'email' => 'test@example.com'];
+            $exported = GDPRCompliance::exportUserData($testData);
+            assertTrue(strpos($exported, 'Test User') !== false, 'Export should contain user data');
+
+            return true;
+        });
+
+        // GDPR-004: Data Anonymization
+        $this->runner->addTest('GDPR-004: Data anonymization function exists', function() {
+            require_once __DIR__ . '/../config/compliance.php';
+            assertTrue(method_exists('GDPRCompliance', 'anonymizeUserData'), 'Anonymize function should exist');
+
+            // Test anonymization
+            $testData = ['user_id' => 1, 'full_name' => 'Real Name', 'email' => 'real@email.com'];
+            $anonymized = GDPRCompliance::anonymizeUserData($testData);
+            assertEquals('ANONYMIZED_USER', $anonymized['full_name'], 'Name should be anonymized');
+            assertTrue(strpos($anonymized['email'], 'anonymized_') === 0, 'Email should be anonymized');
+
+            return true;
+        });
+
+        // PCI-001: No Card Data Storage
+        $this->runner->addTest('PCI-001: Card data storage is disabled', function() {
+            require_once __DIR__ . '/../config/compliance.php';
+            assertTrue(defined('PCI_STORE_CARD_DATA'), 'PCI card storage setting should be defined');
+            assertFalse(PCI_STORE_CARD_DATA, 'Card data storage must be disabled');
+            assertFalse(PCI_STORE_CVV, 'CVV storage must be disabled');
+            return true;
+        });
+
+        // PCI-002: Card Data Validation
+        $this->runner->addTest('PCI-002: Card data detection function exists', function() {
+            require_once __DIR__ . '/../config/compliance.php';
+            assertTrue(class_exists('PCIDSSCompliance'), 'PCIDSSCompliance class should exist');
+            assertTrue(method_exists('PCIDSSCompliance', 'validateNoCardData'), 'Validation function should exist');
+
+            // Test with safe data (should pass)
+            $safeData = ['amount' => 100, 'description' => 'Parking fee'];
+            $result = PCIDSSCompliance::validateNoCardData($safeData);
+            assertTrue($result, 'Safe data should pass validation');
+
+            return true;
+        });
+
+        // PCI-003: Card Masking
+        $this->runner->addTest('PCI-003: Card masking function works correctly', function() {
+            require_once __DIR__ . '/../config/compliance.php';
+            assertTrue(method_exists('PCIDSSCompliance', 'maskCardNumber'), 'Mask function should exist');
+
+            $masked = PCIDSSCompliance::maskCardNumber('4111111111111111');
+            assertEquals('****-****-****-1111', $masked, 'Card should be masked showing last 4 digits');
+
+            return true;
+        });
+
+        // PCI-004: Approved Payment Gateways
+        $this->runner->addTest('PCI-004: Payment gateway validation exists', function() {
+            require_once __DIR__ . '/../config/compliance.php';
+            assertTrue(defined('PCI_APPROVED_GATEWAYS'), 'Approved gateways should be defined');
+            assertTrue(PCIDSSCompliance::isApprovedGateway('stripe'), 'Stripe should be approved');
+            assertTrue(PCIDSSCompliance::isApprovedGateway('paypal'), 'PayPal should be approved');
+            assertFalse(PCIDSSCompliance::isApprovedGateway('unknown_gateway'), 'Unknown gateway should not be approved');
+            return true;
+        });
+
+        // COMPLIANCE-001: Overall Compliance Status
+        $this->runner->addTest('COMPLIANCE-001: Compliance audit function exists', function() {
+            require_once __DIR__ . '/../config/compliance.php';
+            assertTrue(class_exists('ComplianceAudit'), 'ComplianceAudit class should exist');
+
+            $status = ComplianceAudit::getComplianceStatus();
+            assertTrue(isset($status['gdpr']), 'GDPR status should be present');
+            assertTrue(isset($status['pci_dss']), 'PCI DSS status should be present');
+            assertEquals('COMPLIANT', $status['gdpr']['status'], 'GDPR should be compliant');
+            assertEquals('COMPLIANT', $status['pci_dss']['status'], 'PCI DSS should be compliant');
+
+            return true;
+        });
+
+        // COMPLIANCE-002: Settings Verification
+        $this->runner->addTest('COMPLIANCE-002: Compliance settings verification passes', function() {
+            require_once __DIR__ . '/../config/compliance.php';
+
+            $verification = ComplianceAudit::verifySettings();
+            assertTrue($verification['compliant'], 'All compliance settings should be valid');
+            assertTrue(empty($verification['issues']), 'No compliance issues should exist');
+
+            return true;
+        });
     }
 
     public function run() {
