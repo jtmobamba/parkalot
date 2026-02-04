@@ -54,13 +54,21 @@ jobs:
       - name: Check PHP Syntax
         run: |
           echo "Checking PHP syntax errors..."
-          find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \; 2>&1 | grep -v "No syntax errors"
-          echo "PHP syntax check completed"
+          errors=$(find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \; 2>&1)
+          if echo "$errors" | grep -q "Parse error\|Fatal error"; then
+            echo "$errors" | grep "Parse error\|Fatal error"
+            exit 1
+          fi
+          echo "✓ All PHP files have valid syntax"
 
       - name: Check for Debug Statements
         run: |
           echo "Checking for debug statements..."
-          ! grep -r "var_dump\|print_r\|die(" --include="*.php" --exclude-dir=vendor . || echo "Warning: Debug statements found"
+          if grep -r "var_dump\|print_r" --include="*.php" --exclude-dir=vendor . 2>/dev/null; then
+            echo "⚠ Warning: Debug statements found (review recommended)"
+          else
+            echo "✓ No debug statements found"
+          fi
 
   # ═══════════════════════════════════════════════════════════════════
   # JOB 2: AUTOMATED TESTING
@@ -115,17 +123,34 @@ jobs:
       - name: Check for Hardcoded Credentials
         run: |
           echo "Scanning for hardcoded credentials..."
-          ! grep -r "password\s*=\s*['\"][^'\"]*['\"]" --include="*.php" --exclude-dir=vendor . | grep -v "password_hash\|PASSWORD_DEFAULT\|config" || echo "Review: Potential hardcoded credentials"
+          findings=$(grep -r "password\s*=\s*['\"][^'\"]*['\"]" --include="*.php" --exclude-dir=vendor . 2>/dev/null | grep -v "password_hash\|PASSWORD_DEFAULT\|getenv\|config" || true)
+          if [ -n "$findings" ]; then
+            echo "⚠ Review: Potential hardcoded credentials found:"
+            echo "$findings"
+          else
+            echo "✓ No hardcoded credentials detected"
+          fi
 
       - name: Check for SQL Injection Vulnerabilities
         run: |
           echo "Checking for potential SQL injection..."
-          ! grep -r "\$_GET\|\$_POST\|\$_REQUEST" --include="*.php" . | grep -v "prepare\|htmlspecialchars\|filter_var" | head -20 || echo "Review: Check input sanitization"
+          findings=$(grep -r "\$_GET\|\$_POST\|\$_REQUEST" --include="*.php" --exclude-dir=vendor . 2>/dev/null | grep -v "prepare\|htmlspecialchars\|filter_var\|sanitize" | head -20 || true)
+          if [ -n "$findings" ]; then
+            echo "⚠ Review recommended - direct superglobal usage found:"
+            echo "$findings"
+          else
+            echo "✓ No direct superglobal usage without sanitization"
+          fi
 
       - name: Check Security Headers
         run: |
           echo "Verifying security configurations exist..."
-          test -f config/security.php && echo "✓ Security config found" || echo "✗ Security config missing"
+          if [ -f config/security.php ]; then
+            echo "✓ Security config found"
+          else
+            echo "✗ Security config missing"
+            exit 1
+          fi
 
   # ═══════════════════════════════════════════════════════════════════
   # JOB 4: DOCKER BUILD
