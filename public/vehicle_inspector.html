@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Inspector Dashboard - ParkaLot</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      background: #f5f6fa;
+    }
+
+    .inspector-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: white;
+      padding: 25px 30px;
+      margin-bottom: 30px;
+    }
+
+    .header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title h1 {
+      margin: 0 0 5px 0;
+      font-size: 24px;
+    }
+
+    .header-title p {
+      margin: 0;
+      opacity: 0.8;
+      font-size: 14px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 15px;
+    }
+
+    .dashboard-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px 40px;
+    }
+
+    .search-section {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      margin-bottom: 30px;
+    }
+
+    .search-section h2 {
+      margin: 0 0 20px 0;
+      color: #1a1a2e;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 15px;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 16px 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: #e94560;
+    }
+
+    .search-input::placeholder {
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    .btn-search {
+      padding: 16px 40px;
+      background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    .btn-search:hover {
+      transform: translateY(-2px);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .stat-card h3 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: #666;
+      text-transform: uppercase;
+    }
+
+    .stat-card .value {
+      font-size: 36px;
+      font-weight: bold;
+      color: #1a1a2e;
+    }
+
+    .stat-card.warning .value { color: #f39c12; }
+    .stat-card.danger .value { color: #e74c3c; }
+    .stat-card.success .value { color: #27ae60; }
+
+    .vehicle-result {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      margin-bottom: 30px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .vehicle-result.active {
+      display: block;
+    }
+
+    .vehicle-header {
+      background: #1a1a2e;
+      color: white;
+      padding: 25px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .license-plate {
+      background: #f1c40f;
+      color: #1a1a2e;
+      padding: 10px 25px;
+      border-radius: 5px;
+      font-size: 24px;
+      font-weight: bold;
+      letter-spacing: 3px;
+      font-family: monospace;
+    }
+
+    .vehicle-status {
+      display: flex;
+      gap: 10px;
+    }
+
+    .status-badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-valid { background: #27ae60; color: white; }
+    .status-expired { background: #e74c3c; color: white; }
+    .status-warning { background: #f39c12; color: white; }
+    .status-unknown { background: #95a5a6; color: white; }
+
+    .vehicle-details {
+      padding: 30px;
+    }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 25px;
+    }
+
+    .detail-group h4 {
+      margin: 0 0 15px 0;
+      color: #1a1a2e;
+      border-bottom: 2px solid #e94560;
+      padding-bottom: 10px;
+    }
+
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .detail-item .label {
+      color: #666;
+    }
+
+    .detail-item .value {
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .inspection-form {
+      background: #f8f9fa;
+      padding: 25px 30px;
+      border-top: 1px solid #eee;
+    }
+
+    .inspection-form h4 {
+      margin: 0 0 20px 0;
+      color: #1a1a2e;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 0;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 14px;
+    }
+
+    .form-group select,
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    .form-group select:focus,
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #e94560;
+    }
+
+    .btn-submit {
+      background: #27ae60;
+      color: white;
+      padding: 14px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-submit:hover {
+      background: #219a52;
+    }
+
+    .recent-inspections {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .section-header {
+      padding: 20px 25px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-header h3 {
+      margin: 0;
+      color: #1a1a2e;
+    }
+
+    .inspection-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .inspection-table th {
+      background: #f8f9fa;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+      color: #666;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+
+    .inspection-table td {
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .inspection-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .btn-logout {
+      background: #e74c3c;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .message {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      color: #155724;
+      display: block;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      color: #721c24;
+      display: block;
+    }
+
+    .add-vehicle-btn {
+      background: #3498db;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="inspector-header">
+  <div class="header-content">
+    <div class="header-title">
+      <h1>Vehicle Inspector Dashboard</h1>
+      <p>Welcome, <span id="inspectorName">Inspector</span></p>
+    </div>
+    <div class="header-actions">
+      <button class="add-vehicle-btn" onclick="showAddVehicleForm()">Add New Vehicle</button>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-container">
+  <!-- Search Section -->
+  <div class="search-section">
+    <h2>Search Vehicle by License Plate</h2>
+    <div class="search-box">
+      <input type="text" class="search-input" id="licensePlateSearch" placeholder="Enter license plate (e.g., AB12 CDE)">
+      <button class="btn-search" onclick="searchVehicle()">Search Database</button>
+      <button class="btn-search" style="background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);" onclick="fetchFromDVLA()">Fetch from DVLA API</button>
+    </div>
+    <p style="margin-top: 10px; color: #666; font-size: 13px;">
+      <strong>Search Database:</strong> Check local vehicle records |
+      <strong>Fetch from DVLA API:</strong> Get official vehicle data from checkcardetails.co.uk and save to database
+    </p>
+    <div class="message" id="searchMessage"></div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <h3>Total Vehicles</h3>
+      <div class="value" id="totalVehicles">0</div>
+    </div>
+    <div class="stat-card success">
+      <h3>Valid Status</h3>
+      <div class="value" id="validVehicles">0</div>
+    </div>
+    <div class="stat-card warning">
+      <h3>Expiring Soon</h3>
+      <div class="value" id="expiringVehicles">0</div>
+    </div>
+    <div class="stat-card danger">
+      <h3>Expired/Issues</h3>
+      <div class="value" id="expiredVehicles">0</div>
+    </div>
+  </div>
+
+  <!-- Vehicle Result -->
+  <div class="vehicle-result" id="vehicleResult">
+    <div class="vehicle-header">
+      <div class="license-plate" id="displayPlate">AB12 CDE</div>
+      <div class="vehicle-status" id="vehicleStatusBadges">
+        <!-- Status badges inserted here -->
+      </div>
+    </div>
+
+    <div class="vehicle-details">
+      <div class="details-grid">
+        <div class="detail-group">
+          <h4>Vehicle Information</h4>
+          <div class="detail-item">
+            <span class="label">Make</span>
+            <span class="value" id="vMake">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Model</span>
+            <span class="value" id="vModel">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Colour</span>
+            <span class="value" id="vColor">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Year of Manufacture</span>
+            <span class="value" id="vYear">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Vehicle Type</span>
+            <span class="value" id="vType">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Fuel Type</span>
+            <span class="value" id="vFuelType">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Engine Capacity</span>
+            <span class="value" id="vEngineCapacity">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">CO2 Emissions</span>
+            <span class="value" id="vCO2">-</span>
+          </div>
+        </div>
+
+        <div class="detail-group">
+          <h4>Owner Information</h4>
+          <div class="detail-item">
+            <span class="label">Owner Name</span>
+            <span class="value" id="vOwner">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Contact</span>
+            <span class="value" id="vContact">-</span>
+          </div>
+        </div>
+
+        <div class="detail-group">
+          <h4>Status Information</h4>
+          <div class="detail-item">
+            <span class="label">Registration</span>
+            <span class="value" id="vRegistration">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Insurance</span>
+            <span class="value" id="vInsurance">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">MOT Status</span>
+            <span class="value" id="vMot">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">MOT Expiry</span>
+            <span class="value" id="vMotExpiry">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Tax Status</span>
+            <span class="value" id="vTax">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Tax Due</span>
+            <span class="value" id="vTaxDue">-</span>
+          </div>
+        </div>
+
+        <div class="detail-group">
+          <h4>Inspection History</h4>
+          <div class="detail-item">
+            <span class="label">Last Inspection</span>
+            <span class="value" id="vLastInspection">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Inspected By</span>
+            <span class="value" id="vInspectedBy">-</span>
+          </div>
+          <div class="detail-item">
+            <span class="label">Notes</span>
+            <span class="value" id="vNotes">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Inspection Form -->
+    <div class="inspection-form">
+      <h4>Record New Inspection</h4>
+      <input type="hidden" id="inspectVehicleId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Inspection Type</label>
+          <select id="inspectionType">
+            <option value="routine">Routine Check</option>
+            <option value="entry">Entry Inspection</option>
+            <option value="exit">Exit Inspection</option>
+            <option value="incident">Incident Report</option>
+            <option value="verification">Verification</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Result</label>
+          <select id="inspectionResult">
+            <option value="pass">Pass</option>
+            <option value="warning">Warning</option>
+            <option value="fail">Fail</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Damage Detected</label>
+          <select id="damageDetected">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="inspectionLocation" placeholder="e.g., City Center Garage - Bay A12">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Inspection Notes</label>
+        <textarea id="inspectionNotes" rows="3" placeholder="Enter any additional notes about the inspection..."></textarea>
+      </div>
+      <div class="message" id="inspectionMessage"></div>
+      <button class="btn-submit" onclick="submitInspection()">Submit Inspection Report</button>
+    </div>
+  </div>
+
+  <!-- Add Vehicle Form (hidden by default) -->
+  <div class="vehicle-result" id="addVehicleForm">
+    <div class="vehicle-header" style="background: #3498db;">
+      <h3 style="margin: 0; color: white;">Add New Vehicle to Database</h3>
+      <button onclick="hideAddVehicleForm()" style="background: none; border: none; color: white; cursor: pointer; font-size: 24px;">&times;</button>
+    </div>
+    <div class="vehicle-details">
+      <div class="form-row">
+        <div class="form-group">
+          <label>License Plate *</label>
+          <input type="text" id="newLicensePlate" placeholder="AB12 CDE" style="text-transform: uppercase;">
+        </div>
+        <div class="form-group">
+          <label>Make</label>
+          <input type="text" id="newMake" placeholder="e.g., Toyota">
+        </div>
+        <div class="form-group">
+          <label>Model</label>
+          <input type="text" id="newModel" placeholder="e.g., Corolla">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Color</label>
+          <input type="text" id="newColor" placeholder="e.g., Silver">
+        </div>
+        <div class="form-group">
+          <label>Year</label>
+          <input type="number" id="newYear" placeholder="e.g., 2020" min="1900" max="2030">
+        </div>
+        <div class="form-group">
+          <label>Vehicle Type</label>
+          <select id="newVehicleType">
+            <option value="car">Car</option>
+            <option value="suv">SUV</option>
+            <option value="van">Van</option>
+            <option value="truck">Truck</option>
+            <option value="motorcycle">Motorcycle</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Owner Name</label>
+          <input type="text" id="newOwnerName" placeholder="Full name">
+        </div>
+        <div class="form-group">
+          <label>Owner Contact</label>
+          <input type="text" id="newOwnerContact" placeholder="Phone or email">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Registration Status</label>
+          <select id="newRegistration">
+            <option value="unknown">Unknown</option>
+            <option value="valid">Valid</option>
+            <option value="expired">Expired</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Insurance Status</label>
+          <select id="newInsurance">
+            <option value="unknown">Unknown</option>
+            <option value="valid">Valid</option>
+            <option value="expired">Expired</option>
+            <option value="none">None</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>MOT Status</label>
+          <select id="newMot">
+            <option value="unknown">Unknown</option>
+            <option value="valid">Valid</option>
+            <option value="expired">Expired</option>
+            <option value="exempt">Exempt</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tax Status</label>
+          <select id="newTax">
+            <option value="unknown">Unknown</option>
+            <option value="valid">Valid</option>
+            <option value="expired">Expired</option>
+            <option value="exempt">Exempt</option>
+            <option value="sorn">SORN</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="newNotes" rows="2" placeholder="Any additional notes..."></textarea>
+      </div>
+      <div class="message" id="addVehicleMessage"></div>
+      <button class="btn-submit" onclick="addVehicle()">Add Vehicle to Database</button>
+    </div>
+  </div>
+
+  <!-- Recent Inspections -->
+  <div class="recent-inspections">
+    <div class="section-header">
+      <h3>Recent Inspections</h3>
+      <span id="inspectionCount">0 inspections today</span>
+    </div>
+    <table class="inspection-table">
+      <thead>
+        <tr>
+          <th>License Plate</th>
+          <th>Vehicle</th>
+          <th>Type</th>
+          <th>Result</th>
+          <th>Location</th>
+          <th>Date/Time</th>
+        </tr>
+      </thead>
+      <tbody id="inspectionTableBody">
+        <tr>
+          <td colspan="6" class="no-results">No inspections recorded yet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const API = "../api/index.php";
+  let currentVehicle = null;
+
+  // Check authentication
+  async function checkAuth() {
+    try {
+      const res = await fetch(API + "?route=me", { credentials: "same-origin" });
+      if (!res.ok) {
+        window.location.href = "login_vehicle_inspector.html";
+        return false;
+      }
+      const data = await res.json();
+      if (data.role !== "vehicle_inspector") {
+        window.location.href = "index.html";
+        return false;
+      }
+      document.getElementById("inspectorName").textContent = data.user_name || "Inspector";
+      return true;
+    } catch (err) {
+      window.location.href = "login_vehicle_inspector.html";
+      return false;
+    }
+  }
+
+  // Logout
+  function logout() {
+    fetch(API + "?route=logout", { credentials: "same-origin" })
+      .then(() => window.location.href = "login_vehicle_inspector.html");
+  }
+
+  // Helper function to extract data from notes field
+  function extractFromNotes(notes, prefix) {
+    if (!notes) return null;
+    const regex = new RegExp(prefix + '\\s*([^,\\n]+)', 'i');
+    const match = notes.match(regex);
+    return match ? match[1].trim() : null;
+  }
+
+  // Helper function to format status
+  function formatStatus(status) {
+    if (!status || status === 'unknown') return '-';
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  }
+
+  // Helper function to format date
+  function formatDate(dateStr) {
+    if (!dateStr || dateStr === '-') return '-';
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  // Search vehicle by license plate (local database)
+  async function searchVehicle() {
+    const plate = document.getElementById("licensePlateSearch").value.trim().toUpperCase();
+    const msgEl = document.getElementById("searchMessage");
+
+    if (!plate) {
+      msgEl.textContent = "Please enter a license plate number.";
+      msgEl.className = "message error";
+      return;
+    }
+
+    msgEl.textContent = "Searching local database...";
+    msgEl.className = "message";
+    msgEl.style.display = "block";
+    msgEl.style.background = "#e3f2fd";
+    msgEl.style.color = "#1976d2";
+
+    try {
+      const res = await fetch(API + "?route=vehicles/search&plate=" + encodeURIComponent(plate), {
+        credentials: "same-origin"
+      });
+      const data = await res.json();
+
+      if (data.vehicle) {
+        currentVehicle = data.vehicle;
+        displayVehicle(data.vehicle);
+        msgEl.style.display = "none";
+      } else {
+        msgEl.innerHTML = data.error || "Vehicle not found in local database. <strong>Click 'Fetch from DVLA API'</strong> to get official vehicle data.";
+        msgEl.className = "message error";
+        document.getElementById("vehicleResult").classList.remove("active");
+      }
+    } catch (err) {
+      console.error("Search error:", err);
+      msgEl.textContent = "Search failed. Please try again.";
+      msgEl.className = "message error";
+    }
+  }
+
+  // Fetch vehicle data from Check Car Details API (DVLA data)
+  async function fetchFromDVLA() {
+    const plate = document.getElementById("licensePlateSearch").value.trim().toUpperCase().replace(/\s/g, '');
+    const msgEl = document.getElementById("searchMessage");
+
+    if (!plate) {
+      msgEl.textContent = "Please enter a license plate number.";
+      msgEl.className = "message error";
+      return;
+    }
+
+    msgEl.innerHTML = "<strong>Fetching from DVLA API...</strong> Please wait, retrieving official vehicle data.";
+    msgEl.className = "message";
+    msgEl.style.display = "block";
+    msgEl.style.background = "#fff3cd";
+    msgEl.style.color = "#856404";
+
+    try {
+      const res = await fetch(API + "?route=vehicles/fetch-dvla&plate=" + encodeURIComponent(plate), {
+        credentials: "same-origin"
+      });
+      const data = await res.json();
+
+      if (data.success && data.vehicle) {
+        currentVehicle = data.vehicle;
+        displayVehicle(data.vehicle);
+        msgEl.innerHTML = "<strong>Success!</strong> Vehicle data fetched from DVLA and saved to database.";
+        msgEl.className = "message success";
+        loadStats();
+      } else if (data.api_data) {
+        // API returned data but vehicle wasn't saved yet - display it
+        displayApiData(data.api_data, plate);
+        msgEl.innerHTML = "<strong>Data retrieved!</strong> Review the information below and it has been saved to the database.";
+        msgEl.className = "message success";
+      } else {
+        msgEl.textContent = data.error || "Could not fetch vehicle data. The vehicle may not be registered in the UK.";
+        msgEl.className = "message error";
+      }
+    } catch (err) {
+      console.error("DVLA fetch error:", err);
+      msgEl.textContent = "Failed to fetch from DVLA API. Please try again or add vehicle manually.";
+      msgEl.className = "message error";
+    }
+  }
+
+  // Display API data in the form for review
+  function displayApiData(apiData, plate) {
+    document.getElementById("vehicleResult").classList.add("active");
+    document.getElementById("displayPlate").textContent = plate;
+
+    // Map API fields to display fields
+    document.getElementById("vMake").textContent = apiData.make || apiData.Make || "-";
+    document.getElementById("vModel").textContent = apiData.model || apiData.Model || "-";
+    document.getElementById("vColor").textContent = apiData.colour || apiData.Colour || apiData.color || "-";
+    document.getElementById("vYear").textContent = apiData.yearOfManufacture || apiData.YearOfManufacture || apiData.year || "-";
+    document.getElementById("vType").textContent = apiData.vehicleType || apiData.fuelType || apiData.FuelType || "-";
+
+    // Status info from API
+    document.getElementById("vRegistration").textContent = apiData.registrationStatus || "Valid";
+    document.getElementById("vMot").textContent = apiData.motStatus || apiData.MotStatus || "-";
+    document.getElementById("vMotExpiry").textContent = apiData.motExpiryDate || apiData.MotExpiryDate || "-";
+    document.getElementById("vTax").textContent = apiData.taxStatus || apiData.TaxStatus || "-";
+    document.getElementById("vTaxDue").textContent = apiData.taxDueDate || apiData.TaxDueDate || "-";
+
+    // Additional info
+    document.getElementById("vOwner").textContent = "-";
+    document.getElementById("vContact").textContent = "-";
+    document.getElementById("vInsurance").textContent = "-";
+    document.getElementById("vLastInspection").textContent = "Just Added";
+    document.getElementById("vInspectedBy").textContent = document.getElementById("inspectorName").textContent;
+    document.getElementById("vNotes").textContent = "Data fetched from DVLA API";
+
+    // Status badges
+    const badgesEl = document.getElementById("vehicleStatusBadges");
+    badgesEl.innerHTML = "";
+
+    const motStatus = (apiData.motStatus || apiData.MotStatus || "").toLowerCase();
+    const taxStatus = (apiData.taxStatus || apiData.TaxStatus || "").toLowerCase();
+
+    const statuses = [
+      { label: "REG", status: "valid" },
+      { label: "MOT", status: motStatus.includes("valid") ? "valid" : motStatus.includes("no") ? "expired" : "unknown" },
+      { label: "TAX", status: taxStatus.includes("taxed") ? "valid" : taxStatus.includes("untaxed") ? "expired" : "unknown" }
+    ];
+
+    statuses.forEach(s => {
+      const badge = document.createElement("span");
+      badge.className = "status-badge status-" + s.status;
+      badge.textContent = s.label + ": " + s.status.toUpperCase();
+      badgesEl.appendChild(badge);
+    });
+
+    document.getElementById("vehicleResult").scrollIntoView({ behavior: "smooth" });
+  }
+
+  // Display vehicle details
+  function displayVehicle(v) {
+    document.getElementById("vehicleResult").classList.add("active");
+    document.getElementById("displayPlate").textContent = v.license_plate;
+    document.getElementById("inspectVehicleId").value = v.vehicle_id;
+
+    // Vehicle info
+    document.getElementById("vMake").textContent = v.make || "-";
+    document.getElementById("vModel").textContent = v.model || "-";
+    document.getElementById("vColor").textContent = v.color || v.colour || "-";
+    document.getElementById("vYear").textContent = v.year || "-";
+    document.getElementById("vType").textContent = v.vehicle_type || "-";
+
+    // Additional vehicle details (from DVLA API)
+    document.getElementById("vFuelType").textContent = v.fuel_type || extractFromNotes(v.notes, 'Fuel:') || "-";
+    document.getElementById("vEngineCapacity").textContent = v.engine_capacity ? v.engine_capacity + "cc" : extractFromNotes(v.notes, 'Engine:') || "-";
+    document.getElementById("vCO2").textContent = v.co2_emissions ? v.co2_emissions + "g/km" : extractFromNotes(v.notes, 'CO2:') || "-";
+
+    // Owner info
+    document.getElementById("vOwner").textContent = v.owner_name || "-";
+    document.getElementById("vContact").textContent = v.owner_contact || "-";
+
+    // Status info
+    document.getElementById("vRegistration").textContent = formatStatus(v.registration_status);
+    document.getElementById("vInsurance").textContent = formatStatus(v.insurance_status);
+    document.getElementById("vMot").textContent = formatStatus(v.mot_status);
+    document.getElementById("vMotExpiry").textContent = formatDate(v.mot_expiry_date);
+    document.getElementById("vTax").textContent = formatStatus(v.tax_status);
+    document.getElementById("vTaxDue").textContent = formatDate(v.tax_due_date);
+
+    // Inspection info
+    document.getElementById("vLastInspection").textContent = formatDate(v.last_inspection_date) || "Never";
+    document.getElementById("vInspectedBy").textContent = v.inspector_name || "-";
+    document.getElementById("vNotes").textContent = v.notes || "-";
+
+    // Status badges
+    const badgesEl = document.getElementById("vehicleStatusBadges");
+    badgesEl.innerHTML = "";
+
+    const statuses = [
+      { label: "REG", status: v.registration_status },
+      { label: "INS", status: v.insurance_status },
+      { label: "MOT", status: v.mot_status },
+      { label: "TAX", status: v.tax_status }
+    ];
+
+    statuses.forEach(s => {
+      const badge = document.createElement("span");
+      badge.className = "status-badge status-" + (s.status === "valid" ? "valid" : s.status === "expired" ? "expired" : "unknown");
+      badge.textContent = s.label + ": " + (s.status || "?").toUpperCase();
+      badgesEl.appendChild(badge);
+    });
+
+    // Scroll to result
+    document.getElementById("vehicleResult").scrollIntoView({ behavior: "smooth" });
+  }
+
+  // Submit inspection
+  async function submitInspection() {
+    const vehicleId = document.getElementById("inspectVehicleId").value;
+    const msgEl = document.getElementById("inspectionMessage");
+
+    if (!vehicleId) {
+      msgEl.textContent = "No vehicle selected.";
+      msgEl.className = "message error";
+      return;
+    }
+
+    const data = {
+      vehicle_id: vehicleId,
+      inspection_type: document.getElementById("inspectionType").value,
+      inspection_result: document.getElementById("inspectionResult").value,
+      damage_detected: document.getElementById("damageDetected").value === "1",
+      location_spotted: document.getElementById("inspectionLocation").value,
+      inspection_notes: document.getElementById("inspectionNotes").value
+    };
+
+    try {
+      const res = await fetch(API + "?route=vehicles/inspect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        msgEl.textContent = "Inspection recorded successfully!";
+        msgEl.className = "message success";
+        loadRecentInspections();
+        loadStats();
+        // Clear form
+        document.getElementById("inspectionLocation").value = "";
+        document.getElementById("inspectionNotes").value = "";
+      } else {
+        msgEl.textContent = result.error || "Failed to record inspection.";
+        msgEl.className = "message error";
+      }
+    } catch (err) {
+      console.error("Inspection error:", err);
+      msgEl.textContent = "Failed to submit inspection.";
+      msgEl.className = "message error";
+    }
+  }
+
+  // Show/hide add vehicle form
+  function showAddVehicleForm() {
+    document.getElementById("addVehicleForm").classList.add("active");
+    document.getElementById("addVehicleForm").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function hideAddVehicleForm() {
+    document.getElementById("addVehicleForm").classList.remove("active");
+  }
+
+  // Add new vehicle
+  async function addVehicle() {
+    const plate = document.getElementById("newLicensePlate").value.trim().toUpperCase();
+    const msgEl = document.getElementById("addVehicleMessage");
+
+    if (!plate) {
+      msgEl.textContent = "License plate is required.";
+      msgEl.className = "message error";
+      return;
+    }
+
+    const data = {
+      license_plate: plate,
+      make: document.getElementById("newMake").value,
+      model: document.getElementById("newModel").value,
+      color: document.getElementById("newColor").value,
+      year: document.getElementById("newYear").value,
+      vehicle_type: document.getElementById("newVehicleType").value,
+      owner_name: document.getElementById("newOwnerName").value,
+      owner_contact: document.getElementById("newOwnerContact").value,
+      registration_status: document.getElementById("newRegistration").value,
+      insurance_status: document.getElementById("newInsurance").value,
+      mot_status: document.getElementById("newMot").value,
+      tax_status: document.getElementById("newTax").value,
+      notes: document.getElementById("newNotes").value
+    };
+
+    try {
+      const res = await fetch(API + "?route=vehicles/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        msgEl.textContent = "Vehicle added successfully!";
+        msgEl.className = "message success";
+        loadStats();
+        // Search for the new vehicle
+        document.getElementById("licensePlateSearch").value = plate;
+        setTimeout(() => {
+          searchVehicle();
+          hideAddVehicleForm();
+        }, 1000);
+      } else {
+        msgEl.textContent = result.error || "Failed to add vehicle.";
+        msgEl.className = "message error";
+      }
+    } catch (err) {
+      console.error("Add vehicle error:", err);
+      msgEl.textContent = "Failed to add vehicle.";
+      msgEl.className = "message error";
+    }
+  }
+
+  // Load statistics
+  async function loadStats() {
+    try {
+      const res = await fetch(API + "?route=vehicles/stats", { credentials: "same-origin" });
+      const data = await res.json();
+
+      if (data.success) {
+        document.getElementById("totalVehicles").textContent = data.total || 0;
+        document.getElementById("validVehicles").textContent = data.valid || 0;
+        document.getElementById("expiringVehicles").textContent = data.expiring || 0;
+        document.getElementById("expiredVehicles").textContent = data.expired || 0;
+      }
+    } catch (err) {
+      console.error("Failed to load stats:", err);
+    }
+  }
+
+  // Load recent inspections
+  async function loadRecentInspections() {
+    try {
+      const res = await fetch(API + "?route=vehicles/inspections", { credentials: "same-origin" });
+      const data = await res.json();
+
+      const tbody = document.getElementById("inspectionTableBody");
+
+      if (data.inspections && data.inspections.length > 0) {
+        tbody.innerHTML = "";
+        data.inspections.forEach(insp => {
+          const tr = document.createElement("tr");
+          const resultClass = insp.inspection_result === "pass" ? "status-valid" :
+                             insp.inspection_result === "fail" ? "status-expired" : "status-warning";
+          tr.innerHTML = `
+            <td><strong>${insp.license_plate}</strong></td>
+            <td>${insp.make || ""} ${insp.model || ""}</td>
+            <td>${insp.inspection_type}</td>
+            <td><span class="status-badge ${resultClass}">${insp.inspection_result}</span></td>
+            <td>${insp.location_spotted || "-"}</td>
+            <td>${new Date(insp.created_at).toLocaleString("en-GB")}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+        document.getElementById("inspectionCount").textContent = data.inspections.length + " recent inspections";
+      } else {
+        tbody.innerHTML = '<tr><td colspan="6" class="no-results">No inspections recorded yet.</td></tr>';
+      }
+    } catch (err) {
+      console.error("Failed to load inspections:", err);
+    }
+  }
+
+  // Handle Enter key in search
+  document.getElementById("licensePlateSearch").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") searchVehicle();
+  });
+
+  // Initialize
+  async function init() {
+    const isAuth = await checkAuth();
+    if (isAuth) {
+      loadStats();
+      loadRecentInspections();
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

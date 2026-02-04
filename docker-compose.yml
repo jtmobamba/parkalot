@@ -1,0 +1,107 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║         PARKALOT SYSTEM - DOCKER COMPOSE CONFIGURATION             ║
+# ║                                                                    ║
+# ║  Multi-container orchestration for the ParkaLot system including: ║
+# ║  - PHP/Apache application server                                   ║
+# ║  - MySQL database server                                           ║
+# ║  - phpMyAdmin for database management                              ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+services:
+  # ─────────────────────────────────────────────────────────────────────
+  # APPLICATION SERVER
+  # ─────────────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parkalot_app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=parkalots
+      - DB_USER=parkalot_user
+      - DB_PASSWORD=parkalot_secure_password
+      - APP_ENV=development
+      - APP_DEBUG=true
+    volumes:
+      - ./uploads:/var/www/html/uploads
+      - ./logs:/var/www/html/logs
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - parkalot_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/index.php?route=garages"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ─────────────────────────────────────────────────────────────────────
+  # DATABASE SERVER
+  # ─────────────────────────────────────────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: parkalot_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secure_password
+      MYSQL_DATABASE: parkalots
+      MYSQL_USER: parkalot_user
+      MYSQL_PASSWORD: parkalot_secure_password
+    ports:
+      - "3307:3306"  # Use 3307 on host to avoid conflict with XAMPP MySQL
+    volumes:
+      - parkalot_db_data:/var/lib/mysql
+      - ./database_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database_manager_schema.sql:/docker-entrypoint-initdb.d/02-manager-schema.sql
+      - ./database_vehicle_schema.sql:/docker-entrypoint-initdb.d/03-vehicle-schema.sql
+    networks:
+      - parkalot_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: --default-authentication-plugin=mysql_native_password
+
+  # ─────────────────────────────────────────────────────────────────────
+  # DATABASE ADMIN (PHPMYADMIN)
+  # ─────────────────────────────────────────────────────────────────────
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: parkalot_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root_secure_password
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+    networks:
+      - parkalot_network
+
+# ─────────────────────────────────────────────────────────────────────
+# NETWORKS
+# ─────────────────────────────────────────────────────────────────────
+networks:
+  parkalot_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ─────────────────────────────────────────────────────────────────────
+# VOLUMES
+# ─────────────────────────────────────────────────────────────────────
+volumes:
+  parkalot_db_data:
+    driver: local

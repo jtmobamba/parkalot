@@ -1,0 +1,144 @@
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #f4f6f8;
+  color: #333;
+}
+
+/* ---------- Input Width Variants ---------- */
+
+.input-medium {
+  width: 70%;
+}
+
+.input-small {
+  width: 50%;
+}
+
+/* Center narrower inputs */
+.input-medium,
+.input-small {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+select{
+  
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+.form-message {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding: 12px;
+  font-size: 14px;
+  text-align: center;
+  border-radius: 5px;
+  min-height: 20px;
+  display: none;
+}
+
+.form-message.error {
+  display: block;
+  color: #c0392b;
+  background-color: #fadbd8;
+  border: 1px solid #e74c3c;
+  font-weight: 500;
+}
+
+.form-message.success {
+  display: block;
+  color: #1e8449;
+  background-color: #d5f4e6;
+  border: 1px solid #27ae60;
+  font-weight: 500;
+}
+
+/* ---------- Containers ---------- */
+
+.container {
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 0 15px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 25px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* ---------- Headings ---------- */
+
+h1, h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #1f3a5f;
+}
+
+/* ---------- Form Elements ---------- */
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 5px;
+  font-size: 15px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.btn.primary {
+  background: #3498db;
+  color: #fff;
+}
+
+.btn.primary:hover {
+  background: #2d86c9;
+}
+
+.btn.danger {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.btn.secondary {
+  background: #ecf0f1;
+  color: #333;
+}
+
+/* ---------- Dashboard Extras ---------- */
+
+.spacer {
+  margin-top: 25px;
+}
+

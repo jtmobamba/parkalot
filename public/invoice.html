@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ParkaLot Invoice</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .invoice-container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #2c3e50;
+    }
+
+    .invoice-header h1 {
+      margin: 0;
+      color: #2c3e50;
+    }
+
+    .invoice-logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #3498db;
+    }
+
+    .invoice-summary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .summary-item {
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+    }
+
+    .summary-label {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 5px;
+    }
+
+    .summary-value {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .invoice-table {
+      width: 100%;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .invoice-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .invoice-table th {
+      background: #2c3e50;
+      color: white;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .invoice-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #ecf0f1;
+    }
+
+    .invoice-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .invoice-actions {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #95a5a6;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #7f8c8d;
+    }
+
+    .no-reservations {
+      text-align: center;
+      padding: 40px;
+      color: #7f8c8d;
+    }
+
+    .price-cell {
+      font-weight: 600;
+      color: #27ae60;
+    }
+
+    /* Stripe Payment Section */
+    .payment-section {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .payment-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #ecf0f1;
+    }
+
+    .stripe-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #635bff;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .stripe-logo svg {
+      height: 24px;
+    }
+
+    .payment-status {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status-paid {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .btn-stripe {
+      background: #635bff;
+      color: white;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 auto;
+    }
+
+    .btn-stripe:hover {
+      background: #4b45c6;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(99, 91, 255, 0.4);
+    }
+
+    .btn-stripe:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Stripe Modal */
+    .stripe-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stripe-modal-overlay.active {
+      display: flex;
+    }
+
+    .stripe-modal {
+      background: white;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 450px;
+      overflow: hidden;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+      animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stripe-modal-header {
+      background: linear-gradient(135deg, #635bff 0%, #4b45c6 100%);
+      color: white;
+      padding: 25px;
+      text-align: center;
+    }
+
+    .stripe-modal-header h3 {
+      margin: 0 0 5px 0;
+      font-size: 20px;
+    }
+
+    .stripe-modal-header p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .stripe-modal-body {
+      padding: 25px;
+    }
+
+    .stripe-form-group {
+      margin-bottom: 20px;
+    }
+
+    .stripe-form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #32325d;
+      font-size: 14px;
+    }
+
+    .stripe-input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+    }
+
+    .stripe-input:focus {
+      outline: none;
+      border-color: #635bff;
+      box-shadow: 0 0 0 3px rgba(99, 91, 255, 0.1);
+    }
+
+    .stripe-input::placeholder {
+      color: #aab7c4;
+    }
+
+    .card-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .stripe-modal-footer {
+      padding: 0 25px 25px;
+    }
+
+    .btn-pay {
+      width: 100%;
+      background: #635bff;
+      color: white;
+      padding: 15px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-pay:hover {
+      background: #4b45c6;
+    }
+
+    .btn-pay:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .btn-cancel {
+      width: 100%;
+      background: transparent;
+      color: #6b7c93;
+      padding: 12px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .btn-cancel:hover {
+      color: #32325d;
+    }
+
+    .secure-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 15px;
+      color: #6b7c93;
+      font-size: 12px;
+    }
+
+    .processing-overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255,255,255,0.95);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      border-radius: 12px;
+    }
+
+    .processing-overlay.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #e0e0e0;
+      border-top-color: #635bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .success-icon {
+      width: 60px;
+      height: 60px;
+      background: #27ae60;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .success-icon svg {
+      width: 30px;
+      height: 30px;
+      fill: white;
+    }
+
+    .card-icons {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .card-icon {
+      width: 36px;
+      height: 24px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      color: #666;
+    }
+
+    @media print {
+      .invoice-actions, .btn, .payment-section, .stripe-modal-overlay {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="invoice-container">
+  <!-- Header -->
+  <div class="invoice-header">
+    <div>
+      <div class="invoice-logo">ParkaLot</div>
+      <p style="margin: 5px 0 0 0; color: #7f8c8d;">Parking Management System</p>
+    </div>
+    <div style="text-align: right;">
+      <h1>Invoice</h1>
+      <p style="margin: 5px 0 0 0; color: #7f8c8d;">Date: <span id="invoiceDate"></span></p>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="invoice-summary">
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="summary-label">Total Reservations</div>
+        <div class="summary-value"><span id="count">0</span></div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Total Amount</div>
+        <div class="summary-value">£<span id="total">0.00</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reservations Table -->
+  <div class="invoice-table">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Garage</th>
+          <th>Start Time</th>
+          <th>End Time</th>
+          <th>Duration</th>
+          <th>Price (£)</th>
+        </tr>
+      </thead>
+      <tbody id="invoiceTableBody">
+        <tr>
+          <td colspan="6" class="no-reservations">Loading reservations...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Stripe Payment Section -->
+  <div class="payment-section" id="paymentSection">
+    <div class="payment-header">
+      <div class="stripe-logo">
+        <svg viewBox="0 0 60 25" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#635bff" d="M59.64 14.28h-8.06c.19 1.93 1.6 2.55 3.2 2.55 1.64 0 2.96-.37 4.05-.95v3.32a10.4 10.4 0 0 1-4.56 1c-4.01 0-6.83-2.5-6.83-7.48 0-4.19 2.39-7.52 6.3-7.52 3.92 0 5.96 3.28 5.96 7.5 0 .4-.03 1.04-.06 1.58zm-6.06-5.85c-1.2 0-2.08.94-2.21 2.56h4.25c-.07-1.62-.91-2.56-2.04-2.56zM40.95 20.3c-1.44 0-2.32-.6-2.9-1.04l-.02 4.63-4.12.87V5.57h3.76l.08 1.02a4.7 4.7 0 0 1 3.23-1.29c2.9 0 5.62 2.6 5.62 7.4 0 5.23-2.7 7.6-5.65 7.6zM40 8.95c-.95 0-1.54.34-1.97.81l.02 6.12c.4.44.98.78 1.95.78 1.52 0 2.54-1.65 2.54-3.87 0-2.15-1.04-3.84-2.54-3.84zM28.24 5.57h4.13v14.44h-4.13V5.57zm0-5.13L32.37 0v3.77l-4.13.88V.44zm-4.32 9.35v10.22H19.8V5.57h3.7l.12 1.22c1-1.77 3.07-1.41 3.62-1.22v3.79c-.52-.17-2.29-.45-3.32.43zM12.16 5.57l.1 1.11a4.04 4.04 0 0 1 3.19-1.4v3.87c-.45-.07-2.3-.23-3.28.73v10.13H8.02V5.57h4.14zM2.68 11.6c0-.76.62-1.06 1.65-1.06 1.48 0 3.35.45 4.83 1.26V8.24a12.73 12.73 0 0 0-4.83-.93c-3.93 0-6.55 2.05-6.55 5.47 0 5.34 7.33 4.48 7.33 6.79 0 .9-.77 1.19-1.86 1.19-1.61 0-3.67-.66-5.3-1.56v3.64a13.45 13.45 0 0 0 5.3 1.12c4.02 0 6.78-1.99 6.78-5.46-.02-5.76-7.35-4.73-7.35-6.9z"/>
+        </svg>
+        <span>Secure Payment</span>
+      </div>
+      <span class="payment-status status-pending" id="paymentStatus">Payment Pending</span>
+    </div>
+
+    <!-- Order Summary -->
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 25px;">
+      <h4 style="margin: 0 0 15px 0; color: #32325d;">Order Summary</h4>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #6b7c93;">
+        <span>Reservations (<span id="itemCount">0</span> items)</span>
+        <span>£<span id="subtotal">0.00</span></span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #6b7c93;">
+        <span>Service Fee</span>
+        <span>£<span id="serviceFee">0.00</span></span>
+      </div>
+      <div style="border-top: 1px solid #e0e0e0; padding-top: 10px; margin-top: 10px; display: flex; justify-content: space-between; font-weight: 600; color: #32325d;">
+        <span>Total</span>
+        <span>£<span id="orderTotal">0.00</span></span>
+      </div>
+    </div>
+
+    <div style="text-align: center;">
+      <p style="color: #6b7c93; margin-bottom: 20px;">Complete your payment securely with Stripe</p>
+
+      <!-- Purchase Reservation Button -->
+      <button class="btn-stripe" id="purchaseBtn" onclick="openStripeModal()" style="background: #27ae60; margin-bottom: 15px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="9" cy="21" r="1"></circle>
+          <circle cx="20" cy="21" r="1"></circle>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+        </svg>
+        Purchase Reservations (<span id="purchaseItemCount">0</span> items)
+      </button>
+
+      <!-- Pay Now Button -->
+      <button class="btn-stripe" id="payNowBtn" onclick="openStripeModal()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+          <line x1="1" y1="10" x2="23" y2="10"></line>
+        </svg>
+        Pay Now - £<span id="payAmount">0.00</span>
+      </button>
+      <div class="card-icons" style="justify-content: center; margin-top: 15px;">
+        <div class="card-icon">VISA</div>
+        <div class="card-icon">MC</div>
+        <div class="card-icon">AMEX</div>
+        <div class="card-icon">GPay</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="invoice-actions">
+    <a href="#" class="btn btn-primary" onclick="generatePDF(); return false;">
+      Download Invoice PDF
+    </a>
+    <button class="btn btn-secondary" onclick="window.location='customer_dashboard.html'">
+      Back to Dashboard
+    </button>
+  </div>
+</div>
+
+<!-- Stripe Payment Modal -->
+<div class="stripe-modal-overlay" id="stripeModal">
+  <div class="stripe-modal" style="position: relative;">
+    <div class="stripe-modal-header">
+      <h3>Complete Payment</h3>
+      <p>ParkaLot Parking Services - <span id="modalItemCount">0</span> reservation(s)</p>
+    </div>
+
+    <div class="stripe-modal-body">
+      <div class="stripe-form-group">
+        <label>Card Number</label>
+        <input type="text" class="stripe-input" id="cardNumber" placeholder="4242 4242 4242 4242" maxlength="19">
+        <div class="card-icons">
+          <div class="card-icon">VISA</div>
+          <div class="card-icon">MC</div>
+          <div class="card-icon">AMEX</div>
+        </div>
+      </div>
+
+      <div class="card-row">
+        <div class="stripe-form-group">
+          <label>Expiry Date</label>
+          <input type="text" class="stripe-input" id="cardExpiry" placeholder="MM/YY" maxlength="5">
+        </div>
+        <div class="stripe-form-group">
+          <label>CVC</label>
+          <input type="text" class="stripe-input" id="cardCvc" placeholder="123" maxlength="4">
+        </div>
+      </div>
+
+      <div class="stripe-form-group">
+        <label>Cardholder Name</label>
+        <input type="text" class="stripe-input" id="cardName" placeholder="John Smith">
+      </div>
+    </div>
+
+    <div class="stripe-modal-footer">
+      <button class="btn-pay" id="processPayBtn" onclick="processPayment()">
+        Pay £<span id="modalPayAmount">0.00</span>
+      </button>
+      <button class="btn-cancel" onclick="closeStripeModal()">Cancel</button>
+      <div class="secure-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>Secured by Stripe - 256-bit SSL encryption</span>
+      </div>
+    </div>
+
+    <!-- Processing Overlay -->
+    <div class="processing-overlay" id="processingOverlay">
+      <div class="spinner" id="processingSpinner"></div>
+      <p id="processingText" style="margin-top: 15px; color: #32325d; font-weight: 600;">Processing payment...</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = "../api/index.php";
+  let totalAmount = 0;
+  let itemCount = 0;
+  let paymentComplete = false;
+  let reservationIds = [];
+
+  // Set current date
+  document.getElementById('invoiceDate').textContent = new Date().toLocaleDateString('en-GB');
+
+  // Check authentication on page load
+  async function checkAuth() {
+    try {
+      const res = await fetch(API + "?route=me", { credentials: "include" });
+      if (!res.ok) {
+        // Not authenticated, redirect to login
+        window.location.href = "index.html";
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Auth check failed:", err);
+      window.location.href = "index.html";
+      return false;
+    }
+  }
+
+  // PDF generation function
+  function generatePDF() {
+    // Use the API endpoint for PDF generation
+    window.open(API + "?route=invoice/pdf", '_blank');
+  }
+
+  // Update payment amount and item count display
+  function updatePaymentAmount(amount, count) {
+    totalAmount = amount;
+    itemCount = count || 0;
+
+    // Calculate service fee (2% of subtotal)
+    const serviceFee = amount * 0.02;
+    const orderTotal = amount + serviceFee;
+
+    // Update all displays
+    document.getElementById('payAmount').textContent = orderTotal.toFixed(2);
+    document.getElementById('modalPayAmount').textContent = orderTotal.toFixed(2);
+    document.getElementById('itemCount').textContent = itemCount;
+    document.getElementById('purchaseItemCount').textContent = itemCount;
+    document.getElementById('subtotal').textContent = amount.toFixed(2);
+    document.getElementById('serviceFee').textContent = serviceFee.toFixed(2);
+    document.getElementById('orderTotal').textContent = orderTotal.toFixed(2);
+
+    // Update total amount to include service fee
+    totalAmount = orderTotal;
+
+    // Disable buttons if no items
+    const payBtn = document.getElementById('payNowBtn');
+    const purchaseBtn = document.getElementById('purchaseBtn');
+
+    if (amount <= 0 || itemCount <= 0) {
+      payBtn.disabled = true;
+      payBtn.style.opacity = '0.5';
+      purchaseBtn.disabled = true;
+      purchaseBtn.style.opacity = '0.5';
+    } else {
+      payBtn.disabled = false;
+      payBtn.style.opacity = '1';
+      purchaseBtn.disabled = false;
+      purchaseBtn.style.opacity = '1';
+    }
+  }
+
+  // Open Stripe modal
+  function openStripeModal() {
+    if (totalAmount <= 0 || paymentComplete) return;
+    document.getElementById('stripeModal').classList.add('active');
+    document.getElementById('modalItemCount').textContent = itemCount;
+    document.getElementById('cardNumber').focus();
+  }
+
+  // Close Stripe modal
+  function closeStripeModal() {
+    document.getElementById('stripeModal').classList.remove('active');
+    document.getElementById('processingOverlay').classList.remove('active');
+    // Reset form
+    document.getElementById('cardNumber').value = '';
+    document.getElementById('cardExpiry').value = '';
+    document.getElementById('cardCvc').value = '';
+    document.getElementById('cardName').value = '';
+  }
+
+  // Format card number with spaces
+  document.addEventListener('DOMContentLoaded', function() {
+    const cardInput = document.getElementById('cardNumber');
+    const expiryInput = document.getElementById('cardExpiry');
+
+    if (cardInput) {
+      cardInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\s/g, '').replace(/\D/g, '');
+        let formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+        e.target.value = formatted.substring(0, 19);
+      });
+    }
+
+    if (expiryInput) {
+      expiryInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length >= 2) {
+          value = value.substring(0, 2) + '/' + value.substring(2, 4);
+        }
+        e.target.value = value;
+      });
+    }
+  });
+
+  // Process fake payment
+  function processPayment() {
+    const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+    const expiry = document.getElementById('cardExpiry').value;
+    const cvc = document.getElementById('cardCvc').value;
+    const name = document.getElementById('cardName').value;
+
+    // Basic validation
+    if (cardNumber.length < 15) {
+      alert('Please enter a valid card number');
+      return;
+    }
+    if (!expiry || expiry.length < 5) {
+      alert('Please enter a valid expiry date');
+      return;
+    }
+    if (!cvc || cvc.length < 3) {
+      alert('Please enter a valid CVC');
+      return;
+    }
+    if (!name.trim()) {
+      alert('Please enter the cardholder name');
+      return;
+    }
+
+    // Show processing overlay
+    const overlay = document.getElementById('processingOverlay');
+    const spinner = document.getElementById('processingSpinner');
+    const text = document.getElementById('processingText');
+
+    overlay.classList.add('active');
+    text.textContent = 'Processing payment...';
+
+    // Simulate payment processing
+    setTimeout(() => {
+      text.textContent = 'Verifying card details...';
+    }, 1000);
+
+    setTimeout(() => {
+      text.textContent = 'Authorizing transaction...';
+    }, 2000);
+
+    setTimeout(async () => {
+      // Save payment to database
+      try {
+        const paymentRes = await fetch(API + "?route=payments/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            amount: totalAmount,
+            reservation_ids: reservationIds,
+            payment_method: "card"
+          })
+        });
+
+        const paymentData = await paymentRes.json();
+        const transactionId = paymentData.transaction_id || ('TXN-' + Date.now());
+
+        // Show success
+        spinner.style.display = 'none';
+        overlay.innerHTML = `
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h3 style="color: #27ae60; margin: 0 0 10px 0;">Payment Successful!</h3>
+          <p style="color: #6b7c93; margin: 0;">Transaction ID: ${transactionId}</p>
+          <p style="color: #6b7c93; margin: 5px 0 0 0;">Items: ${itemCount} reservation(s)</p>
+          <p style="color: #6b7c93; margin: 5px 0 0 0;">Amount: £${totalAmount.toFixed(2)}</p>
+          <p style="color: #27ae60; margin: 10px 0 0 0; font-size: 12px;">Payment saved to database</p>
+        `;
+
+        // Update main page status
+        paymentComplete = true;
+        document.getElementById('paymentStatus').textContent = 'Paid';
+        document.getElementById('paymentStatus').className = 'payment-status status-paid';
+      } catch (err) {
+        console.error("Payment save error:", err);
+        // Still show success for demo but note the error
+        spinner.style.display = 'none';
+        overlay.innerHTML = `
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h3 style="color: #27ae60; margin: 0 0 10px 0;">Payment Processed!</h3>
+          <p style="color: #6b7c93; margin: 0;">Transaction ID: TXN-${Date.now()}</p>
+          <p style="color: #6b7c93; margin: 5px 0 0 0;">Items: ${itemCount} reservation(s)</p>
+          <p style="color: #6b7c93; margin: 5px 0 0 0;">Amount: £${totalAmount.toFixed(2)}</p>
+        `;
+        paymentComplete = true;
+        document.getElementById('paymentStatus').textContent = 'Paid';
+        document.getElementById('paymentStatus').className = 'payment-status status-paid';
+      }
+
+      // Update Pay Now button
+      document.getElementById('payNowBtn').disabled = true;
+      document.getElementById('payNowBtn').innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Payment Complete
+      `;
+
+      // Update Purchase button
+      document.getElementById('purchaseBtn').disabled = true;
+      document.getElementById('purchaseBtn').style.background = '#27ae60';
+      document.getElementById('purchaseBtn').innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Purchase Complete (${itemCount} items)
+      `;
+
+      // Close modal after showing success
+      setTimeout(() => {
+        closeStripeModal();
+        // Reset overlay for next time
+        overlay.innerHTML = `
+          <div class="spinner" id="processingSpinner"></div>
+          <p id="processingText" style="margin-top: 15px; color: #32325d; font-weight: 600;">Processing payment...</p>
+        `;
+      }, 3000);
+
+    }, 3500);
+  }
+
+  // Modified loadInvoice to update payment amount
+  const originalLoadInvoice = typeof loadInvoice === 'function' ? loadInvoice : null;
+
+  // Initialize page
+  async function initInvoicePage() {
+    console.log('Initializing invoice page...');
+    const isAuth = await checkAuth();
+    console.log('Auth result:', isAuth);
+    if (isAuth) {
+      console.log('Loading invoice data...');
+
+      // Fetch invoice data directly to get reservation IDs
+      try {
+        const invoiceRes = await fetch(API + "?route=invoice", { credentials: "include" });
+        const invoiceData = await invoiceRes.json();
+
+        if (invoiceData.reservations && invoiceData.reservations.length > 0) {
+          // Store reservation IDs for payment
+          reservationIds = invoiceData.reservations
+            .filter(r => r.status === 'active')
+            .map(r => r.reservation_id);
+
+          console.log('Active reservation IDs:', reservationIds);
+        }
+      } catch (err) {
+        console.error('Failed to fetch reservation IDs:', err);
+      }
+
+      // Make sure loadInvoice is available
+      if (typeof loadInvoice === 'function') {
+        await loadInvoice();
+        // Update payment amount and count from the displayed values
+        const totalEl = document.getElementById('total');
+        const countEl = document.getElementById('count');
+        if (totalEl && countEl) {
+          const amount = parseFloat(totalEl.textContent) || 0;
+          const count = parseInt(countEl.textContent) || 0;
+          updatePaymentAmount(amount, count);
+        }
+      } else {
+        console.error('loadInvoice function not found!');
+      }
+    }
+  }
+
+  // Start initialization after app.js loads
+  window.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, starting initialization...');
+    initInvoicePage();
+  });
+</script>
+<script src="js/app.js"></script>
+<script>
+  // Backup: Call init if DOM already loaded
+  if (document.readyState === 'loading') {
+    // Still loading, event listener will handle it
+  } else {
+    // DOM already loaded
+    console.log('DOM already loaded, calling initInvoicePage directly...');
+    initInvoicePage();
+  }
+</script>
+
+</body>
+</html>

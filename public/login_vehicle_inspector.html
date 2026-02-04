@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vehicle Inspector Login - ParkaLot</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 420px;
+      overflow: hidden;
+    }
+
+    .login-header {
+      background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+      color: white;
+      padding: 40px 30px;
+      text-align: center;
+    }
+
+    .login-header h1 {
+      margin: 0 0 10px 0;
+      font-size: 28px;
+    }
+
+    .login-header p {
+      margin: 0;
+      opacity: 0.9;
+      font-size: 14px;
+    }
+
+    .inspector-icon {
+      width: 80px;
+      height: 80px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+
+    .inspector-icon svg {
+      width: 40px;
+      height: 40px;
+      stroke: white;
+    }
+
+    .login-form {
+      padding: 40px 30px;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 14px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #e94560;
+      box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.1);
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+    }
+
+    .login-message {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .login-message.error {
+      background: #ffe6e6;
+      color: #c0392b;
+      display: block;
+    }
+
+    .login-message.success {
+      background: #e6ffe6;
+      color: #27ae60;
+      display: block;
+    }
+
+    .login-footer {
+      text-align: center;
+      padding: 20px 30px 30px;
+      border-top: 1px solid #eee;
+    }
+
+    .login-footer a {
+      color: #0f3460;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .login-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .security-badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+      color: #999;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-header">
+    <div class="inspector-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="M21 21l-4.35-4.35"></path>
+        <path d="M11 8v6"></path>
+        <path d="M8 11h6"></path>
+      </svg>
+    </div>
+    <h1>Vehicle Inspector</h1>
+    <p>ParkaLot Inspection Portal</p>
+  </div>
+
+  <div class="login-form">
+    <div class="login-message" id="loginMessage"></div>
+
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="login_email" placeholder="inspector@parkalot.com" required>
+    </div>
+
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login_password" placeholder="Enter your password" required>
+    </div>
+
+    <button class="btn-login" onclick="loginInspector()">Sign In to Inspector Portal</button>
+
+    <div class="security-badge">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
+      <span>Secure Authentication</span>
+    </div>
+  </div>
+
+  <div class="login-footer">
+    <a href="#" onclick="showForgotPasswordModal()" style="display: block; margin-bottom: 10px;">Forgot Password?</a>
+    <a href="index.html">Back to Main Login</a>
+  </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div id="forgotPasswordModal" style="
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+">
+  <div style="
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  ">
+    <h2 style="margin-top: 0; color: #e94560; text-align: center;">Reset Password</h2>
+
+    <!-- Step 1: Enter Email -->
+    <div id="forgotStep1">
+      <p style="text-align: center; color: #666; margin-bottom: 20px;">
+        Enter your email address and we'll send you a verification code.
+      </p>
+
+      <div id="forgotMessage" style="
+        margin: 15px 0;
+        padding: 12px;
+        border-radius: 5px;
+        text-align: center;
+        display: none;
+      "></div>
+
+      <div style="margin: 20px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">
+          Email Address:
+        </label>
+        <input
+          id="forgotEmail"
+          type="email"
+          placeholder="inspector@parkalot.com"
+          style="
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+          "
+        >
+      </div>
+
+      <button
+        onclick="sendResetCode()"
+        style="
+          width: 100%;
+          padding: 12px;
+          background: linear-gradient(135deg, #e94560 0%, #0f3460 100%);
+          color: white;
+          border: none;
+          border-radius: 5px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          margin-bottom: 10px;
+        "
+      >
+        Send Reset Code
+      </button>
+    </div>
+
+    <!-- Step 2: Enter OTP and New Password -->
+    <div id="forgotStep2" style="display: none;">
+      <p style="text-align: center; color: #666; margin-bottom: 20px;">
+        Enter the verification code sent to your email and your new password.
+      </p>
+
+      <div id="resetMessage" style="
+        margin: 15px 0;
+        padding: 12px;
+        border-radius: 5px;
+        text-align: center;
+        display: none;
+      "></div>
+
+      <div style="margin: 20px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">
+          Verification Code:
+        </label>
+        <input
+          id="resetOtpInput"
+          type="text"
+          placeholder="000000"
+          maxlength="6"
+          style="
+            width: 100%;
+            padding: 15px;
+            font-size: 24px;
+            text-align: center;
+            letter-spacing: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-weight: bold;
+          "
+        >
+      </div>
+
+      <div style="margin: 20px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">
+          New Password:
+        </label>
+        <input
+          id="newPassword"
+          type="password"
+          placeholder="Enter new password (min 8 chars)"
+          style="
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+          "
+        >
+      </div>
+
+      <div style="margin: 20px 0;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #333;">
+          Confirm Password:
+        </label>
+        <input
+          id="confirmPassword"
+          type="password"
+          placeholder="Confirm new password"
+          style="
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+          "
+        >
+      </div>
+
+      <button
+        onclick="resetPassword()"
+        style="
+          width: 100%;
+          padding: 12px;
+          background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+          color: white;
+          border: none;
+          border-radius: 5px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          margin-bottom: 10px;
+        "
+      >
+        Reset Password
+      </button>
+
+      <button
+        onclick="resendResetCode()"
+        style="
+          width: 100%;
+          padding: 10px;
+          background: white;
+          color: #3498db;
+          border: 2px solid #3498db;
+          border-radius: 5px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+        "
+      >
+        Resend Code
+      </button>
+    </div>
+
+    <p style="text-align: center; margin-top: 15px;">
+      <a href="#" onclick="hideForgotPasswordModal()" style="color: #999; text-decoration: none; font-size: 14px;">Cancel</a>
+    </p>
+  </div>
+</div>
+
+<script>
+  const API = "../api/index.php";
+
+  async function loginInspector() {
+    const email = document.getElementById("login_email").value;
+    const password = document.getElementById("login_password").value;
+    const msgEl = document.getElementById("loginMessage");
+
+    if (!email || !password) {
+      msgEl.textContent = "Please enter both email and password.";
+      msgEl.className = "login-message error";
+      return;
+    }
+
+    msgEl.textContent = "Signing in...";
+    msgEl.className = "login-message";
+    msgEl.style.display = "block";
+    msgEl.style.background = "#e3f2fd";
+    msgEl.style.color = "#1976d2";
+
+    try {
+      const res = await fetch(API + "?route=login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.message) {
+        // Check if user is a vehicle inspector
+        const meRes = await fetch(API + "?route=me", { credentials: "same-origin" });
+        const meData = await meRes.json();
+
+        if (meData.role === "vehicle_inspector") {
+          msgEl.textContent = "Login successful! Redirecting...";
+          msgEl.className = "login-message success";
+          setTimeout(() => {
+            window.location.href = "vehicle_inspector.html";
+          }, 1000);
+        } else {
+          msgEl.textContent = "Access denied. This portal is for vehicle inspectors only.";
+          msgEl.className = "login-message error";
+          // Logout the non-inspector user
+          fetch(API + "?route=logout", { credentials: "same-origin" });
+        }
+      } else {
+        msgEl.textContent = data.error || "Invalid credentials.";
+        msgEl.className = "login-message error";
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      msgEl.textContent = "Network error. Please try again.";
+      msgEl.className = "login-message error";
+    }
+  }
+
+  // Handle Enter key
+  document.addEventListener("keypress", function(e) {
+    if (e.key === "Enter" && document.getElementById('forgotPasswordModal').style.display !== 'flex') {
+      loginInspector();
+    }
+  });
+
+  // Forgot Password Functions
+  let resetEmail = '';
+
+  function showForgotPasswordModal() {
+    document.getElementById('forgotPasswordModal').style.display = 'flex';
+    document.getElementById('forgotStep1').style.display = 'block';
+    document.getElementById('forgotStep2').style.display = 'none';
+    document.getElementById('forgotEmail').value = '';
+    document.getElementById('forgotMessage').style.display = 'none';
+  }
+
+  function hideForgotPasswordModal() {
+    document.getElementById('forgotPasswordModal').style.display = 'none';
+  }
+
+  function showForgotMessage(elementId, message, type) {
+    const el = document.getElementById(elementId);
+    el.textContent = message;
+    el.style.display = 'block';
+    if (type === 'error') {
+      el.style.background = '#ffe6e6';
+      el.style.color = '#c0392b';
+    } else if (type === 'success') {
+      el.style.background = '#d4edda';
+      el.style.color = '#155724';
+    } else {
+      el.style.background = '#e3f2fd';
+      el.style.color = '#1976d2';
+    }
+  }
+
+  async function sendResetCode() {
+    const email = document.getElementById('forgotEmail').value.trim();
+
+    if (!email) {
+      showForgotMessage('forgotMessage', 'Please enter your email address.', 'error');
+      return;
+    }
+
+    showForgotMessage('forgotMessage', 'Sending reset code...', 'info');
+
+    try {
+      const res = await fetch(API + '?route=password/request-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        resetEmail = email;
+        document.getElementById('forgotStep1').style.display = 'none';
+        document.getElementById('forgotStep2').style.display = 'block';
+        showForgotMessage('resetMessage', data.message || 'Code sent! Check your email.', 'success');
+      } else {
+        showForgotMessage('forgotMessage', data.error || 'Failed to send reset code.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showForgotMessage('forgotMessage', 'Network error. Please try again.', 'error');
+    }
+  }
+
+  async function resetPassword() {
+    const otpCode = document.getElementById('resetOtpInput').value.trim();
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (!otpCode || otpCode.length !== 6) {
+      showForgotMessage('resetMessage', 'Please enter a valid 6-digit code.', 'error');
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      showForgotMessage('resetMessage', 'Password must be at least 8 characters.', 'error');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showForgotMessage('resetMessage', 'Passwords do not match.', 'error');
+      return;
+    }
+
+    // Client-side password validation
+    if (!/[A-Z]/.test(newPassword)) {
+      showForgotMessage('resetMessage', 'Password must contain at least one uppercase letter.', 'error');
+      return;
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      showForgotMessage('resetMessage', 'Password must contain at least one lowercase letter.', 'error');
+      return;
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      showForgotMessage('resetMessage', 'Password must contain at least one number.', 'error');
+      return;
+    }
+
+    showForgotMessage('resetMessage', 'Resetting password...', 'info');
+
+    try {
+      const res = await fetch(API + '?route=password/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: resetEmail,
+          otp_code: otpCode,
+          new_password: newPassword
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        showForgotMessage('resetMessage', 'Password reset successful! You can now login.', 'success');
+        setTimeout(() => {
+          hideForgotPasswordModal();
+        }, 2000);
+      } else {
+        showForgotMessage('resetMessage', data.error || 'Failed to reset password.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showForgotMessage('resetMessage', 'Network error. Please try again.', 'error');
+    }
+  }
+
+  async function resendResetCode() {
+    if (!resetEmail) {
+      showForgotMessage('resetMessage', 'Please go back and enter your email.', 'error');
+      return;
+    }
+
+    showForgotMessage('resetMessage', 'Resending code...', 'info');
+
+    try {
+      const res = await fetch(API + '?route=password/request-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        showForgotMessage('resetMessage', 'New code sent! Check your email.', 'success');
+      } else {
+        showForgotMessage('resetMessage', data.error || 'Failed to resend code.', 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      showForgotMessage('resetMessage', 'Network error. Please try again.', 'error');
+    }
+  }
+
+  // Allow only numbers in OTP input
+  document.getElementById('resetOtpInput')?.addEventListener('input', function(e) {
+    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+  });
+</script>
+</body>
+</html>

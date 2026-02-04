@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Dashboard - ParkaLot</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .employee-header {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .task-card {
+      background: white;
+      border-left: 4px solid #3498db;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .task-card.urgent {
+      border-left-color: #e74c3c;
+    }
+    .task-card.completed {
+      opacity: 0.6;
+      border-left-color: #27ae60;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .info-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div class="employee-header">
+    <h1>Employee Dashboard</h1>
+    <p>Welcome, <span id="employeeName">-</span></p>
+    <p style="font-size: 14px; opacity: 0.9;">Your daily tasks and schedule</p>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>Your Information</h3>
+      <p><strong>Department:</strong> <span id="empDepartment">-</span></p>
+      <p><strong>Position:</strong> <span id="empPosition">-</span></p>
+      <p><strong>Employee ID:</strong> <span id="empId">-</span></p>
+    </div>
+
+    <div class="info-card">
+      <h3>Today's Stats</h3>
+      <p><strong>Tasks Completed:</strong> <span id="tasksCompleted">0</span></p>
+      <p><strong>Active Garages:</strong> <span id="activeGarages">0</span></p>
+      <p><strong>Current Shift:</strong> <span id="currentShift">-</span></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Today's Tasks</h2>
+    <div id="tasksContainer">
+      <p style="color: #999; text-align: center; padding: 20px;">No tasks assigned</p>
+    </div>
+  </div>
+
+  <div class="card spacer">
+    <h2>Notifications</h2>
+    <div id="notificationsContainer">
+      <p style="color: #999; text-align: center; padding: 20px;">No new notifications</p>
+    </div>
+  </div>
+
+  <div style="margin-top: 20px;">
+    <button class="btn danger" onclick="logout()">Logout</button>
+  </div>
+
+</div>
+
+<script>
+  const API = "../api/index.php";
+</script>
+<script src="js/app.js"></script>
+<script>
+  // Check authentication and role
+  async function checkAuth() {
+    try {
+      const res = await fetch(API + "?route=me", { credentials: "same-origin" });
+      if (!res.ok) {
+        window.location.href = "index.html";
+        return null;
+      }
+      const data = await res.json();
+      if (data.role && data.role !== 'employee') {
+        window.location.href = data.role + "_dashboard.html";
+        return null;
+      }
+      return data;
+    } catch (e) {
+      console.error("Auth check failed:", e);
+      window.location.href = "index.html";
+      return null;
+    }
+  }
+
+  async function loadEmployeeInfo() {
+    const data = await checkAuth();
+    if (!data) return;
+
+    if (data.user_name) {
+      document.getElementById("employeeName").textContent = data.user_name;
+    }
+    if (data.user_id) {
+      document.getElementById("empId").textContent = data.user_id;
+    }
+
+    // Load employee contract details
+    await loadEmployeeDetails();
+    // Load tasks (placeholder for future implementation)
+    await loadTasks();
+    // Load notifications (placeholder for future implementation)
+    await loadNotifications();
+  }
+
+  async function loadEmployeeDetails() {
+    try {
+      const res = await fetch(API + "?route=employee/details", { credentials: "same-origin" });
+      const data = await res.json();
+
+      if (data.success) {
+        document.getElementById("empDepartment").textContent = data.department ? data.department.replace('_', ' ').toUpperCase() : "-";
+        document.getElementById("empPosition").textContent = data.position || "-";
+        document.getElementById("currentShift").textContent = data.current_shift || "-";
+        document.getElementById("activeGarages").textContent = data.active_garages || "0";
+        document.getElementById("tasksCompleted").textContent = data.tasks_completed || "0";
+      }
+    } catch (e) {
+      console.error("Failed to load employee details:", e);
+      document.getElementById("empDepartment").textContent = "-";
+      document.getElementById("empPosition").textContent = "-";
+      document.getElementById("currentShift").textContent = "-";
+      document.getElementById("activeGarages").textContent = "0";
+      document.getElementById("tasksCompleted").textContent = "0";
+    }
+  }
+
+  async function loadTasks() {
+    // Placeholder - would fetch from /employee/tasks endpoint
+    const container = document.getElementById("tasksContainer");
+    container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No tasks assigned</p>';
+  }
+
+  async function loadNotifications() {
+    // Placeholder - would fetch from /notifications endpoint
+    const container = document.getElementById("notificationsContainer");
+    container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No new notifications</p>';
+  }
+
+  // Initialize dashboard
+  loadEmployeeInfo();
+</script>
+</body>
+</html>

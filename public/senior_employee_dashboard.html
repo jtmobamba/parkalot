@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Senior Employee Dashboard - ParkaLot</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .senior-header {
+      background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .team-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .performance-bar {
+      background: #ecf0f1;
+      height: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+      overflow: hidden;
+    }
+    .performance-fill {
+      background: #27ae60;
+      height: 100%;
+      transition: width 0.3s;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 12px 24px;
+      border: none;
+      background: #e0e0e0;
+      cursor: pointer;
+      border-radius: 5px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .tab.active {
+      background: #f39c12;
+      color: white;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+      margin: 5px;
+    }
+    .btn.primary { background: #3498db; color: white; }
+    .btn.primary:hover { background: #2980b9; }
+    .btn.success { background: #27ae60; color: white; }
+    .btn.success:hover { background: #219a52; }
+    .btn.danger { background: #e74c3c; color: white; }
+    .btn.danger:hover { background: #c0392b; }
+    .btn.warning { background: #f39c12; color: white; }
+    .btn.warning:hover { background: #d68910; }
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .badge-active { background: #27ae60; color: white; }
+    .badge-inactive { background: #95a5a6; color: white; }
+    .badge-excellent { background: #27ae60; color: white; }
+    .badge-good { background: #3498db; color: white; }
+    .badge-average { background: #f39c12; color: white; }
+    .badge-poor { background: #e74c3c; color: white; }
+    .employee-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    .employee-table th, .employee-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .employee-table th {
+      background: #f8f9fa;
+      font-weight: bold;
+    }
+    .employee-table tr:hover {
+      background: #f8f9fa;
+    }
+    .stat-big {
+      font-size: 36px;
+      font-weight: bold;
+      color: #f39c12;
+      margin: 10px 0;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .report-textarea {
+      min-height: 400px;
+      font-family: monospace;
+      resize: vertical;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 700px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .star-rating {
+      color: #f39c12;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="senior-header">
+    <h1>Senior Employee Dashboard</h1>
+    <p>Welcome, <span id="seniorName">-</span></p>
+    <p style="font-size: 14px; opacity: 0.9;">Department: <span id="userDepartment">-</span> | Team management and operations oversight</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('overview')">Overview</button>
+    <button class="tab" onclick="switchTab('team')">Team Management</button>
+    <button class="tab" onclick="switchTab('contracts')">Contracts</button>
+    <button class="tab" onclick="switchTab('reports')">Reports</button>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div id="overview" class="tab-content active">
+    <div class="team-grid">
+      <div class="team-card">
+        <h3>Team Performance</h3>
+        <p><strong>Team Members:</strong> <span id="activeMembers">0</span></p>
+        <p><strong>Tasks Completed Today:</strong> <span id="tasksCompleted">0</span>/<span id="taskTotal">0</span></p>
+        <div class="performance-bar">
+          <div class="performance-fill" id="performanceFill" style="width: 0%"></div>
+        </div>
+        <p style="color: #666; font-size: 14px;"><span id="completionRate">0</span>% completion rate</p>
+      </div>
+
+      <div class="team-card">
+        <h3>Operations Status</h3>
+        <p><strong>Garages Monitored:</strong> <span id="garagesMonitored">0</span></p>
+        <p><strong>Current Occupancy:</strong> <span id="occupancy">0</span>%</p>
+        <p><strong>Issues Resolved Today:</strong> <span id="issuesResolved">0</span></p>
+      </div>
+
+      <div class="team-card">
+        <h3>Customer Satisfaction</h3>
+        <p><strong>Average Rating:</strong> <span id="avgRating">0.0</span>/5.0</p>
+        <p><strong>Positive Feedback:</strong> <span id="positiveFeedback">0</span>%</p>
+        <p><strong>Response Time:</strong> <span id="responseTime">0</span> min avg</p>
+      </div>
+
+      <div class="team-card">
+        <h3>Daily Operations</h3>
+        <p><strong>Completed Tasks:</strong> <span id="completedTasksOverview">0</span></p>
+        <p><strong>Incomplete Tasks:</strong> <span id="incompleteTasksOverview">0</span></p>
+        <p><strong>On Break:</strong> <span id="onBreakOverview">0</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TEAM MANAGEMENT TAB -->
+  <div id="team" class="tab-content">
+    <div class="card">
+      <h2>Team Management</h2>
+      <p style="color: #666; margin-bottom: 15px;">Employees in your department</p>
+
+      <table class="employee-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Position</th>
+            <th>Status</th>
+            <th>Tasks Today</th>
+            <th>Performance</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="teamTableBody">
+          <tr>
+            <td colspan="6" style="padding: 20px; text-align: center; color: #999;">Loading team members...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Employee Performance Ratings</h2>
+      <p style="color: #666; margin-bottom: 15px;">Rate team member performance</p>
+
+      <div id="ratingContainer">
+        <p style="text-align: center; color: #999; padding: 20px;">No employees to rate</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTRACTS TAB -->
+  <div id="contracts" class="tab-content">
+    <div class="card">
+      <h2>Department Contracts</h2>
+      <p style="color: #666; margin-bottom: 15px;">Manage contracts for employees in your department</p>
+
+      <table class="employee-table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Position</th>
+            <th>Salary</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="contractsTableBody">
+          <tr>
+            <td colspan="7" style="padding: 20px; text-align: center; color: #999;">Loading contracts...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- REPORTS TAB -->
+  <div id="reports" class="tab-content">
+    <div class="card">
+      <h2>Generate Reports</h2>
+      <p style="color: #666; margin-bottom: 20px;">Create feedback reports for employees in your department</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Report Type</label>
+          <select id="reportType">
+            <option value="daily">Daily Report</option>
+            <option value="weekly">Weekly Report</option>
+            <option value="monthly">Monthly Report</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Employee (Optional)</label>
+          <select id="reportEmployee">
+            <option value="">All Team Members</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Report Title</label>
+        <input type="text" id="reportTitle" placeholder="Enter report title...">
+      </div>
+
+      <div class="form-group">
+        <label>Report Content (max 100,000 characters)</label>
+        <textarea id="reportContent" class="report-textarea" maxlength="100000" placeholder="Write your detailed report here..."></textarea>
+        <small style="color: #666;"><span id="charCount">0</span>/100,000 characters</small>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button class="btn primary" onclick="saveReport()">Save Report</button>
+        <button class="btn success" onclick="generateDocx()">Generate Word Document (.docx)</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Previous Reports</h2>
+      <div id="previousReports">
+        <p style="text-align: center; color: #999; padding: 20px;">No reports found</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 20px;">
+    <button class="btn danger" onclick="logout()">Logout</button>
+  </div>
+
+</div>
+
+<!-- EDIT CONTRACT MODAL -->
+<div class="modal" id="editContractModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Edit Contract</h2>
+      <button class="modal-close" onclick="closeModal('editContractModal')">&times;</button>
+    </div>
+    <form id="editContractForm" onsubmit="submitEditContract(event)">
+      <input type="hidden" name="contract_id" id="editContractId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Position</label>
+          <select name="position" id="editContractPosition">
+            <option value="">Select Position</option>
+            <option value="Parking Attendant">Parking Attendant</option>
+            <option value="Senior Software Engineer">Senior Software Engineer</option>
+            <option value="Electrical Engineer">Electrical Engineer</option>
+            <option value="Senior Customer Service Representative">Senior Customer Service Representative</option>
+            <option value="Facility Manager">Facility Manager</option>
+            <option value="Software Developer">Software Developer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Contract Status</label>
+          <select name="contract_status" id="editContractStatus">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" name="start_date" id="editContractStartDate">
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" name="end_date" id="editContractEndDate">
+        </div>
+      </div>
+      <button type="submit" class="btn primary" style="width: 100%;">Update Contract</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const API = "../api/index.php";
+</script>
+<script src="js/app.js"></script>
+<script>
+  let currentDepartment = null;
+  let teamMembers = [];
+
+  // Check authentication and role
+  async function checkAuth() {
+    try {
+      const res = await fetch(API + "?route=me", { credentials: "same-origin" });
+      if (!res.ok) {
+        window.location.href = "index.html";
+        return null;
+      }
+      const data = await res.json();
+      if (data.role && data.role !== 'senior_employee') {
+        window.location.href = data.role + "_dashboard.html";
+        return null;
+      }
+      return data;
+    } catch (e) {
+      console.error("Auth check failed:", e);
+      window.location.href = "index.html";
+      return null;
+    }
+  }
+
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    event.target.classList.add('active');
+    document.getElementById(tabName).classList.add('active');
+
+    if (tabName === 'team') loadTeamMembers();
+    if (tabName === 'contracts') loadContracts();
+    if (tabName === 'reports') loadPreviousReports();
+  }
+
+  async function loadSeniorInfo() {
+    const data = await checkAuth();
+    if (!data) return;
+
+    if (data.user_name) {
+      document.getElementById("seniorName").textContent = data.user_name;
+    }
+
+    // Get department info
+    try {
+      const res = await fetch(API + "?route=senior/info", { credentials: "same-origin" });
+      const info = await res.json();
+      if (info.department) {
+        currentDepartment = info.department;
+        document.getElementById("userDepartment").textContent = info.department.replace('_', ' ').toUpperCase();
+      }
+    } catch (e) {
+      console.error("Failed to load senior info:", e);
+    }
+
+    await loadDashboardStats();
+  }
+
+  async function loadDashboardStats() {
+    try {
+      const res = await fetch(API + "?route=senior/stats", { credentials: "same-origin" });
+      const stats = await res.json();
+
+      if (stats.success) {
+        document.getElementById("activeMembers").textContent = stats.team_members || 0;
+        document.getElementById("tasksCompleted").textContent = stats.completed_tasks || 0;
+        document.getElementById("taskTotal").textContent = stats.total_tasks || 0;
+
+        const rate = stats.total_tasks > 0 ? Math.round((stats.completed_tasks / stats.total_tasks) * 100) : 0;
+        document.getElementById("completionRate").textContent = rate;
+        document.getElementById("performanceFill").style.width = rate + "%";
+
+        document.getElementById("garagesMonitored").textContent = stats.garages_monitored || 0;
+        document.getElementById("occupancy").textContent = stats.occupancy || 0;
+        document.getElementById("issuesResolved").textContent = stats.issues_resolved || 0;
+
+        document.getElementById("avgRating").textContent = (stats.avg_rating || 0).toFixed(1);
+        document.getElementById("positiveFeedback").textContent = stats.positive_feedback || 0;
+        document.getElementById("responseTime").textContent = stats.response_time || 0;
+
+        document.getElementById("completedTasksOverview").textContent = stats.completed_tasks || 0;
+        document.getElementById("incompleteTasksOverview").textContent = stats.incomplete_tasks || 0;
+        document.getElementById("onBreakOverview").textContent = stats.on_break || 0;
+      }
+    } catch (e) {
+      console.error("Failed to load stats:", e);
+    }
+  }
+
+  async function loadTeamMembers() {
+    try {
+      const res = await fetch(API + "?route=senior/team", { credentials: "same-origin" });
+      const data = await res.json();
+
+      const tbody = document.getElementById("teamTableBody");
+      const ratingContainer = document.getElementById("ratingContainer");
+      const employeeSelect = document.getElementById("reportEmployee");
+
+      if (data.team && data.team.length > 0) {
+        teamMembers = data.team;
+        tbody.innerHTML = "";
+        ratingContainer.innerHTML = "";
+        employeeSelect.innerHTML = '<option value="">All Team Members</option>';
+
+        data.team.forEach(emp => {
+          // Team table
+          const row = tbody.insertRow();
+          const performanceBadge = getPerformanceBadge(emp.performance_score || 0);
+          row.innerHTML = `
+            <td>${emp.full_name}</td>
+            <td>${emp.position || '-'}</td>
+            <td><span class="badge badge-${emp.contract_status || 'active'}">${emp.contract_status || 'active'}</span></td>
+            <td>${emp.completed_tasks || 0}/${emp.total_tasks || 0}</td>
+            <td><span class="badge ${performanceBadge.class}">${performanceBadge.label}</span></td>
+            <td>
+              <button class="btn primary" style="padding: 5px 10px; font-size: 12px;" onclick="updateEmployeeStatus(${emp.user_id})">Update Status</button>
+            </td>
+          `;
+
+          // Rating card
+          const ratingCard = document.createElement("div");
+          ratingCard.className = "team-card";
+          ratingCard.style.marginBottom = "10px";
+          ratingCard.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>${emp.full_name}</strong>
+                <p style="color: #666; font-size: 14px;">${emp.position || 'No position'}</p>
+              </div>
+              <div>
+                <span class="star-rating">
+                  ${generateStars(emp.rating || 0)}
+                </span>
+                <select onchange="updateRating(${emp.user_id}, this.value)" style="margin-left: 10px; padding: 5px;">
+                  <option value="">Rate</option>
+                  <option value="1">1 Star</option>
+                  <option value="2">2 Stars</option>
+                  <option value="3">3 Stars</option>
+                  <option value="4">4 Stars</option>
+                  <option value="5">5 Stars</option>
+                </select>
+              </div>
+            </div>
+          `;
+          ratingContainer.appendChild(ratingCard);
+
+          // Report employee select
+          employeeSelect.innerHTML += `<option value="${emp.user_id}">${emp.full_name}</option>`;
+        });
+      } else {
+        tbody.innerHTML = "<tr><td colspan='6' style='text-align: center; color: #999; padding: 20px;'>No team members found</td></tr>";
+        ratingContainer.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No employees to rate</p>';
+      }
+    } catch (e) {
+      console.error("Failed to load team:", e);
+    }
+  }
+
+  function getPerformanceBadge(score) {
+    if (score >= 80) return { class: 'badge-excellent', label: 'Excellent' };
+    if (score >= 60) return { class: 'badge-good', label: 'Good' };
+    if (score >= 40) return { class: 'badge-average', label: 'Average' };
+    return { class: 'badge-poor', label: 'Needs Improvement' };
+  }
+
+  function generateStars(rating) {
+    let stars = '';
+    for (let i = 1; i <= 5; i++) {
+      stars += i <= rating ? '★' : '☆';
+    }
+    return stars;
+  }
+
+  async function loadContracts() {
+    try {
+      const res = await fetch(API + "?route=senior/contracts", { credentials: "same-origin" });
+      const data = await res.json();
+
+      const tbody = document.getElementById("contractsTableBody");
+
+      if (data.contracts && data.contracts.length > 0) {
+        tbody.innerHTML = "";
+        data.contracts.forEach(contract => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${contract.full_name}</td>
+            <td>${contract.position || '-'}</td>
+            <td>£${parseFloat(contract.salary || 0).toLocaleString()}</td>
+            <td>${contract.start_date || '-'}</td>
+            <td>${contract.end_date || 'Ongoing'}</td>
+            <td><span class="badge badge-${contract.contract_status}">${contract.contract_status}</span></td>
+            <td>
+              <button class="btn primary" style="padding: 5px 10px; font-size: 12px;" onclick="editContract(${contract.contract_id})">Edit</button>
+            </td>
+          `;
+        });
+      } else {
+        tbody.innerHTML = "<tr><td colspan='7' style='text-align: center; color: #999; padding: 20px;'>No contracts found</td></tr>";
+      }
+    } catch (e) {
+      console.error("Failed to load contracts:", e);
+    }
+  }
+
+  async function updateRating(userId, rating) {
+    if (!rating) return;
+
+    try {
+      const res = await fetch(API + "?route=senior/rate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ user_id: userId, rating: parseInt(rating) })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Rating updated successfully!");
+        loadTeamMembers();
+      } else {
+        alert(data.error || "Failed to update rating");
+      }
+    } catch (e) {
+      alert("Error updating rating: " + e.message);
+    }
+  }
+
+  async function updateEmployeeStatus(userId) {
+    const status = prompt("Enter new operation status (completed, incomplete, breaktime):");
+    if (!status) return;
+
+    if (!['completed', 'incomplete', 'breaktime'].includes(status.toLowerCase())) {
+      alert("Invalid status. Please use: completed, incomplete, or breaktime");
+      return;
+    }
+
+    try {
+      const res = await fetch(API + "?route=senior/update-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ user_id: userId, operation_status: status.toLowerCase() })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Status updated successfully!");
+        loadTeamMembers();
+        loadDashboardStats();
+      } else {
+        alert(data.error || "Failed to update status");
+      }
+    } catch (e) {
+      alert("Error updating status: " + e.message);
+    }
+  }
+
+  function editContract(contractId) {
+    // Find contract in team members or fetch it
+    fetch(API + "?route=senior/contracts", { credentials: "same-origin" })
+      .then(res => res.json())
+      .then(data => {
+        const contract = data.contracts.find(c => c.contract_id == contractId);
+        if (contract) {
+          document.getElementById("editContractId").value = contract.contract_id;
+          document.getElementById("editContractPosition").value = contract.position || '';
+          document.getElementById("editContractStatus").value = contract.contract_status || 'active';
+          document.getElementById("editContractStartDate").value = contract.start_date || '';
+          document.getElementById("editContractEndDate").value = contract.end_date || '';
+
+          document.getElementById("editContractModal").classList.add("active");
+        }
+      });
+  }
+
+  async function submitEditContract(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData);
+    const contractId = payload.contract_id;
+
+    try {
+      const res = await fetch(API + "?route=employees/update&contract_id=" + contractId, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Contract updated successfully!");
+        closeModal("editContractModal");
+        loadContracts();
+      } else {
+        alert(data.error || "Failed to update contract");
+      }
+    } catch (e) {
+      alert("Error updating contract: " + e.message);
+    }
+  }
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove("active");
+  }
+
+  // Report functions
+  document.getElementById("reportContent").addEventListener("input", function() {
+    document.getElementById("charCount").textContent = this.value.length;
+  });
+
+  async function saveReport() {
+    const reportType = document.getElementById("reportType").value;
+    const reportTitle = document.getElementById("reportTitle").value;
+    const reportContent = document.getElementById("reportContent").value;
+    const employeeId = document.getElementById("reportEmployee").value;
+
+    if (!reportTitle || !reportContent) {
+      alert("Please enter a title and content for the report");
+      return;
+    }
+
+    try {
+      const res = await fetch(API + "?route=senior/reports/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          report_type: reportType,
+          title: reportTitle,
+          content: reportContent,
+          employee_id: employeeId || null
+        })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Report saved successfully!");
+        document.getElementById("reportTitle").value = "";
+        document.getElementById("reportContent").value = "";
+        document.getElementById("charCount").textContent = "0";
+        loadPreviousReports();
+      } else {
+        alert(data.error || "Failed to save report");
+      }
+    } catch (e) {
+      alert("Error saving report: " + e.message);
+    }
+  }
+
+  function generateDocx() {
+    const reportType = document.getElementById("reportType").value;
+    const reportTitle = document.getElementById("reportTitle").value || "Untitled Report";
+    const reportContent = document.getElementById("reportContent").value;
+
+    if (!reportContent) {
+      alert("Please enter content for the report");
+      return;
+    }
+
+    // Create a simple Word document using HTML format that Word can open
+    const header = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:w="urn:schemas-microsoft-com:office:word"
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <title>${reportTitle}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 40px; }
+          h1 { color: #2c3e50; border-bottom: 2px solid #f39c12; padding-bottom: 10px; }
+          .meta { color: #7f8c8d; margin-bottom: 20px; }
+          .content { line-height: 1.6; white-space: pre-wrap; }
+        </style>
+      </head>
+      <body>
+        <h1>${reportTitle}</h1>
+        <div class="meta">
+          <p><strong>Report Type:</strong> ${reportType.charAt(0).toUpperCase() + reportType.slice(1)}</p>
+          <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+          <p><strong>Department:</strong> ${currentDepartment || 'N/A'}</p>
+        </div>
+        <div class="content">${reportContent.replace(/\n/g, '<br>')}</div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([header], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${reportTitle.replace(/[^a-z0-9]/gi, '_')}_${reportType}_report.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  async function loadPreviousReports() {
+    try {
+      const res = await fetch(API + "?route=senior/reports", { credentials: "same-origin" });
+      const data = await res.json();
+
+      const container = document.getElementById("previousReports");
+
+      if (data.reports && data.reports.length > 0) {
+        container.innerHTML = "";
+        data.reports.forEach(report => {
+          const div = document.createElement("div");
+          div.className = "team-card";
+          div.style.marginBottom = "10px";
+          div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <div>
+                <strong>${report.title}</strong>
+                <p style="color: #666; font-size: 14px;">
+                  ${report.report_type.toUpperCase()} | ${new Date(report.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <button class="btn" style="padding: 5px 10px; font-size: 12px;" onclick="viewReport(${report.report_id})">View</button>
+            </div>
+          `;
+          container.appendChild(div);
+        });
+      } else {
+        container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No reports found</p>';
+      }
+    } catch (e) {
+      console.error("Failed to load reports:", e);
+    }
+  }
+
+  async function viewReport(reportId) {
+    try {
+      const res = await fetch(API + "?route=senior/reports&report_id=" + reportId, { credentials: "same-origin" });
+      const data = await res.json();
+
+      if (data.report) {
+        document.getElementById("reportType").value = data.report.report_type;
+        document.getElementById("reportTitle").value = data.report.title;
+        document.getElementById("reportContent").value = data.report.content;
+        document.getElementById("charCount").textContent = data.report.content.length;
+
+        // Switch to reports tab
+        switchTab('reports');
+      }
+    } catch (e) {
+      alert("Error loading report: " + e.message);
+    }
+  }
+
+  // Close modal when clicking outside
+  document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
+      }
+    });
+  });
+
+  // Initialize
+  loadSeniorInfo();
+</script>
+</body>
+</html>

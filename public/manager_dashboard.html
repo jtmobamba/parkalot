@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manager Dashboard - ParkaLot</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+    .dashboard-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .stat-big {
+      font-size: 48px;
+      font-weight: bold;
+      color: #3498db;
+      margin: 10px 0;
+    }
+    .manager-header {
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .employee-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    .employee-table th, .employee-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .employee-table th {
+      background: #f8f9fa;
+      font-weight: bold;
+    }
+    .employee-table tr:hover {
+      background: #f8f9fa;
+    }
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .badge-manager { background: #e74c3c; color: white; }
+    .badge-senior_employee { background: #f39c12; color: white; }
+    .badge-employee { background: #3498db; color: white; }
+    .badge-active { background: #27ae60; color: white; }
+    .badge-inactive { background: #95a5a6; color: white; }
+    .badge-terminated { background: #c0392b; color: white; }
+    .badge-pending { background: #f39c12; color: white; }
+    .badge-approved { background: #27ae60; color: white; }
+    .badge-rejected { background: #e74c3c; color: white; }
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-top: 20px;
+    }
+    .activity-log {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .activity-item {
+      padding: 10px;
+      border-left: 3px solid #3498db;
+      margin: 10px 0;
+      background: #f8f9fa;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      padding: 12px 24px;
+      border: none;
+      background: #e0e0e0;
+      cursor: pointer;
+      border-radius: 5px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .tab.active {
+      background: #3498db;
+      color: white;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    /* Button Styles */
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    .btn.primary { background: #3498db; color: white; }
+    .btn.primary:hover { background: #2980b9; }
+    .btn.success { background: #27ae60; color: white; }
+    .btn.success:hover { background: #219a52; }
+    .btn.danger { background: #e74c3c; color: white; }
+    .btn.danger:hover { background: #c0392b; }
+    .btn.warning { background: #f39c12; color: white; }
+    .btn.warning:hover { background: #d68910; }
+    .btn-group {
+      display: flex;
+      gap: 5px;
+    }
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    /* Task Cards */
+    .task-card {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+      border-left: 4px solid #3498db;
+    }
+    .task-card.completed {
+      border-left-color: #27ae60;
+    }
+    .task-card.incomplete {
+      border-left-color: #f39c12;
+    }
+
+    /* Application Card */
+    .application-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="manager-header">
+    <h1>Manager Dashboard</h1>
+    <p>Welcome back, <span id="managerName">-</span></p>
+    <p style="font-size: 14px; opacity: 0.9;">Full system control and analytics</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('overview')">Overview</button>
+    <button class="tab" onclick="switchTab('employees')">Employees</button>
+    <button class="tab" onclick="switchTab('contracts')">Contracts</button>
+    <button class="tab" onclick="switchTab('applications')">Job Applications</button>
+    <button class="tab" onclick="switchTab('analytics')">Analytics</button>
+    <button class="tab" onclick="switchTab('activity')">Activity Logs</button>
+  </div>
+
+  <!-- OVERVIEW TAB -->
+  <div id="overview" class="tab-content active">
+    <div class="dashboard-grid">
+      <div class="dashboard-card">
+        <h3>Total Revenue</h3>
+        <div class="stat-big">£<span id="totalRevenue">0</span></div>
+        <p style="color: #666;">All-time earnings from payments</p>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Active Employees</h3>
+        <div class="stat-big" id="activeEmployees">0</div>
+        <p style="color: #666;">Current workforce</p>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Total Reservations</h3>
+        <div class="stat-big" id="totalReservations">0</div>
+        <p style="color: #666;">Lifetime bookings</p>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>System Users</h3>
+        <div class="stat-big" id="totalUsers">0</div>
+        <p style="color: #666;">Registered customers</p>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="dashboard-card">
+        <h3>Tasks Overview</h3>
+        <p><strong>Completed Tasks:</strong> <span id="completedTasks">0</span></p>
+        <p><strong>Incomplete Tasks:</strong> <span id="incompleteTasks">0</span></p>
+        <p><strong>On Break:</strong> <span id="onBreakCount">0</span></p>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Vehicles Inspected</h3>
+        <div class="stat-big" id="vehiclesInspected">0</div>
+        <p style="color: #666;">Total inspections recorded</p>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Pending Applications</h3>
+        <div class="stat-big" id="pendingApplications">0</div>
+        <p style="color: #666;">Awaiting review</p>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Active Garages</h3>
+        <div class="stat-big" id="activeGarages">0</div>
+        <p style="color: #666;">Operational locations</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPLOYEES TAB -->
+  <div id="employees" class="tab-content">
+    <div class="dashboard-card">
+      <h2>Employee Management</h2>
+      <div style="margin-bottom: 15px;">
+        <button class="btn primary" onclick="showAddEmployeeModal()">+ Add New Employee</button>
+      </div>
+
+      <table class="employee-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Department</th>
+            <th>Position</th>
+            <th>Current Shift</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="employeeTableBody">
+          <tr><td colspan="9" style="text-align: center; color: #999; padding: 20px;">Loading employees...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CONTRACTS TAB -->
+  <div id="contracts" class="tab-content">
+    <div class="dashboard-card">
+      <h2>Employee Contracts</h2>
+      <button class="btn primary" onclick="showCreateContractModal()">+ Create New Contract</button>
+
+      <table class="employee-table" style="margin-top: 20px;">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Department</th>
+            <th>Position</th>
+            <th>Salary</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="contractsTableBody">
+          <tr><td colspan="8" style="text-align: center; color: #999; padding: 20px;">Loading contracts...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- JOB APPLICATIONS TAB -->
+  <div id="applications" class="tab-content">
+    <div class="dashboard-card">
+      <h2>Job Applications</h2>
+      <p style="color: #666; margin-bottom: 20px;">Review and manage job applications</p>
+
+      <div id="applicationsContainer">
+        <p style="text-align: center; color: #999; padding: 20px;">Loading applications...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS TAB -->
+  <div id="analytics" class="tab-content">
+    <div class="dashboard-card">
+      <h2>Revenue Over Time (from Payments)</h2>
+      <div class="chart-container">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+
+    <div class="dashboard-grid" style="margin-top: 20px;">
+      <div class="dashboard-card">
+        <h3>Reservations by Status</h3>
+        <div class="chart-container" style="height: 250px;">
+          <canvas id="statusChart"></canvas>
+        </div>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Vehicle Inspections by Type</h3>
+        <div class="chart-container" style="height: 250px;">
+          <canvas id="vehicleChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid" style="margin-top: 20px;">
+      <div class="dashboard-card">
+        <h3>Employee Distribution by Department</h3>
+        <div class="chart-container" style="height: 250px;">
+          <canvas id="departmentChart"></canvas>
+        </div>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Monthly Reports Summary</h3>
+        <div class="chart-container" style="height: 250px;">
+          <canvas id="reportsChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVITY TAB -->
+  <div id="activity" class="tab-content">
+    <div class="dashboard-card">
+      <h2>System Activity Logs</h2>
+      <p style="color: #666;">Role-based activity tracking</p>
+
+      <div style="margin: 15px 0; display: flex; gap: 10px; flex-wrap: wrap;">
+        <select id="activityRoleFilter" onchange="loadActivityLogs()">
+          <option value="">All Roles</option>
+          <option value="manager">Manager</option>
+          <option value="senior_employee">Senior Employee</option>
+          <option value="employee">Employee</option>
+          <option value="customer">Customer</option>
+          <option value="vehicle_inspector">Vehicle Inspector</option>
+        </select>
+        <input type="date" id="activityStartDate" onchange="loadActivityLogs()">
+        <input type="date" id="activityEndDate" onchange="loadActivityLogs()">
+        <button class="btn" onclick="loadActivityLogs()">Filter</button>
+      </div>
+
+      <div class="activity-log" id="activityLog">
+        <p style="text-align: center; padding: 20px; color: #999;">Loading activity logs...</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 30px;">
+    <button class="btn danger" onclick="logout()">Logout</button>
+  </div>
+
+</div>
+
+<!-- ADD EMPLOYEE MODAL -->
+<div class="modal" id="addEmployeeModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Add New Employee</h2>
+      <button class="modal-close" onclick="closeModal('addEmployeeModal')">&times;</button>
+    </div>
+    <form id="addEmployeeForm" onsubmit="submitAddEmployee(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" name="full_name" required>
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" name="email" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Password *</label>
+          <input type="password" name="password" required minlength="6">
+        </div>
+        <div class="form-group">
+          <label>Role *</label>
+          <select name="role" required>
+            <option value="employee">Employee</option>
+            <option value="senior_employee">Senior Employee</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Department *</label>
+          <select name="department" required>
+            <option value="">Select Department</option>
+            <option value="management">Management</option>
+            <option value="operations">Operations</option>
+            <option value="customer_service">Customer Service</option>
+            <option value="software_systems">Software Systems</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Position *</label>
+          <select name="position" required>
+            <option value="">Select Position</option>
+            <option value="Parking Attendant">Parking Attendant</option>
+            <option value="Senior Software Engineer">Senior Software Engineer</option>
+            <option value="Electrical Engineer">Electrical Engineer</option>
+            <option value="Senior Customer Service Representative">Senior Customer Service Representative</option>
+            <option value="Facility Manager">Facility Manager</option>
+            <option value="Software Developer">Software Developer</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn primary" style="width: 100%;">Add Employee</button>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT EMPLOYEE MODAL -->
+<div class="modal" id="editEmployeeModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Edit Employee</h2>
+      <button class="modal-close" onclick="closeModal('editEmployeeModal')">&times;</button>
+    </div>
+    <form id="editEmployeeForm" onsubmit="submitEditEmployee(event)">
+      <input type="hidden" name="user_id" id="editUserId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" name="full_name" id="editFullName" required>
+        </div>
+        <div class="form-group">
+          <label>Email *</label>
+          <input type="email" name="email" id="editEmail" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Role *</label>
+          <select name="role" id="editRole" required>
+            <option value="employee">Employee</option>
+            <option value="senior_employee">Senior Employee</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Department</label>
+          <select name="department" id="editDepartment">
+            <option value="">Select Department</option>
+            <option value="management">Management</option>
+            <option value="operations">Operations</option>
+            <option value="customer_service">Customer Service</option>
+            <option value="software_systems">Software Systems</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Position</label>
+          <select name="position" id="editPosition">
+            <option value="">Select Position</option>
+            <option value="Parking Attendant">Parking Attendant</option>
+            <option value="Senior Software Engineer">Senior Software Engineer</option>
+            <option value="Electrical Engineer">Electrical Engineer</option>
+            <option value="Senior Customer Service Representative">Senior Customer Service Representative</option>
+            <option value="Facility Manager">Facility Manager</option>
+            <option value="Software Developer">Software Developer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Max Working Hours</label>
+          <input type="number" name="max_hours" id="editMaxHours" min="0" max="12">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Operation Status</label>
+          <select name="operation_status" id="editOperationStatus">
+            <option value="completed">Completed</option>
+            <option value="incomplete">Incomplete</option>
+            <option value="breaktime">Break Time</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Current Shift</label>
+          <select name="current_shift" id="editCurrentShift">
+            <option value="Day Shift">Day Shift</option>
+            <option value="Morning Shift">Morning Shift</option>
+            <option value="Afternoon Shift">Afternoon Shift</option>
+            <option value="Evening Shift">Evening Shift</option>
+            <option value="Night Shift">Night Shift</option>
+            <option value="Evening/Night Shift">Evening/Night Shift</option>
+            <option value="Rotating Shift">Rotating Shift</option>
+            <option value="Weekend Shift">Weekend Shift</option>
+            <option value="On Call">On Call</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn primary" style="width: 100%;">Update Employee</button>
+    </form>
+  </div>
+</div>
+
+<!-- CREATE CONTRACT MODAL -->
+<div class="modal" id="createContractModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Create Employee Contract</h2>
+      <button class="modal-close" onclick="closeModal('createContractModal')">&times;</button>
+    </div>
+    <form id="createContractForm" onsubmit="submitCreateContract(event)">
+      <div class="form-group">
+        <label>Employee *</label>
+        <select name="user_id" id="contractEmployeeSelect" required>
+          <option value="">Select Employee</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Department *</label>
+          <select name="department" required>
+            <option value="">Select Department</option>
+            <option value="management">Management</option>
+            <option value="operations">Operations</option>
+            <option value="customer_service">Customer Service</option>
+            <option value="software_systems">Software Systems</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Position *</label>
+          <select name="position" required>
+            <option value="">Select Position</option>
+            <option value="Parking Attendant">Parking Attendant</option>
+            <option value="Senior Software Engineer">Senior Software Engineer</option>
+            <option value="Electrical Engineer">Electrical Engineer</option>
+            <option value="Senior Customer Service Representative">Senior Customer Service Representative</option>
+            <option value="Facility Manager">Facility Manager</option>
+            <option value="Software Developer">Software Developer</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Salary (£) *</label>
+          <input type="number" name="salary" required min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Contract Status</label>
+          <select name="contract_status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="terminated">Terminated</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Date *</label>
+          <input type="date" name="start_date" required>
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" name="end_date">
+        </div>
+      </div>
+      <button type="submit" class="btn primary" style="width: 100%;">Create Contract</button>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT CONTRACT MODAL -->
+<div class="modal" id="editContractModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Edit Contract</h2>
+      <button class="modal-close" onclick="closeModal('editContractModal')">&times;</button>
+    </div>
+    <form id="editContractForm" onsubmit="submitEditContract(event)">
+      <input type="hidden" name="contract_id" id="editContractId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Department</label>
+          <select name="department" id="editContractDepartment">
+            <option value="">Select Department</option>
+            <option value="management">Management</option>
+            <option value="operations">Operations</option>
+            <option value="customer_service">Customer Service</option>
+            <option value="software_systems">Software Systems</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Position</label>
+          <select name="position" id="editContractPosition">
+            <option value="">Select Position</option>
+            <option value="Parking Attendant">Parking Attendant</option>
+            <option value="Senior Software Engineer">Senior Software Engineer</option>
+            <option value="Electrical Engineer">Electrical Engineer</option>
+            <option value="Senior Customer Service Representative">Senior Customer Service Representative</option>
+            <option value="Facility Manager">Facility Manager</option>
+            <option value="Software Developer">Software Developer</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Salary (£)</label>
+          <input type="number" name="salary" id="editContractSalary" min="0" step="0.01">
+        </div>
+        <div class="form-group">
+          <label>Contract Status</label>
+          <select name="contract_status" id="editContractStatus">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="terminated">Terminated</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Start Date</label>
+          <input type="date" name="start_date" id="editContractStartDate">
+        </div>
+        <div class="form-group">
+          <label>End Date</label>
+          <input type="date" name="end_date" id="editContractEndDate">
+        </div>
+      </div>
+      <button type="submit" class="btn primary" style="width: 100%;">Update Contract</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const API = "../api/index.php";
+</script>
+<script src="js/app.js"></script>
+<script>
+  let chartsInitialized = false;
+  let employeesData = [];
+
+  // Check authentication and role
+  async function checkAuth() {
+    try {
+      const res = await fetch(API + "?route=me", { credentials: "same-origin" });
+      if (!res.ok) {
+        window.location.href = "index.html";
+        return null;
+      }
+      const data = await res.json();
+      if (data.role && data.role !== 'manager') {
+        window.location.href = data.role + "_dashboard.html";
+        return null;
+      }
+      return data;
+    } catch (e) {
+      console.error("Auth check failed:", e);
+      window.location.href = "index.html";
+      return null;
+    }
+  }
+
+  function switchTab(tabName) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    event.target.classList.add('active');
+    document.getElementById(tabName).classList.add('active');
+
+    if (tabName === 'employees') loadEmployees();
+    if (tabName === 'contracts') loadContracts();
+    if (tabName === 'applications') loadJobApplications();
+    if (tabName === 'analytics' && !chartsInitialized) loadAnalytics();
+    if (tabName === 'activity') loadActivityLogs();
+  }
+
+  async function loadOverviewStats() {
+    const data = await checkAuth();
+    if (!data) return;
+
+    if (data.user_name) {
+      document.getElementById("managerName").textContent = data.user_name;
+    }
+
+    // Load dashboard stats
+    try {
+      const res = await fetch(API + "?route=manager/stats", { credentials: "same-origin" });
+      const stats = await res.json();
+
+      if (stats.success) {
+        document.getElementById("totalRevenue").textContent = parseFloat(stats.total_revenue || 0).toLocaleString('en-GB', {minimumFractionDigits: 2});
+        document.getElementById("activeEmployees").textContent = stats.active_employees || 0;
+        document.getElementById("totalReservations").textContent = stats.total_reservations || 0;
+        document.getElementById("totalUsers").textContent = stats.total_users || 0;
+        document.getElementById("completedTasks").textContent = stats.completed_tasks || 0;
+        document.getElementById("incompleteTasks").textContent = stats.incomplete_tasks || 0;
+        document.getElementById("onBreakCount").textContent = stats.on_break || 0;
+        document.getElementById("vehiclesInspected").textContent = stats.vehicles_inspected || 0;
+        document.getElementById("pendingApplications").textContent = stats.pending_applications || 0;
+        document.getElementById("activeGarages").textContent = stats.active_garages || 0;
+      }
+    } catch (e) {
+      console.error("Failed to load stats:", e);
+    }
+  }
+
+  async function loadEmployees() {
+    try {
+      const res = await fetch(API + "?route=manager/employees", { credentials: "same-origin" });
+      const data = await res.json();
+
+      const tbody = document.getElementById("employeeTableBody");
+
+      if (data.employees && data.employees.length > 0) {
+        employeesData = data.employees;
+        tbody.innerHTML = "";
+        data.employees.forEach(emp => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${emp.user_id}</td>
+            <td>${emp.full_name}</td>
+            <td>${emp.email}</td>
+            <td><span class="badge badge-${emp.role}">${emp.role.replace('_', ' ').toUpperCase()}</span></td>
+            <td>${emp.department || '-'}</td>
+            <td>${emp.position || '-'}</td>
+            <td>${emp.current_shift || 'Day Shift'}</td>
+            <td><span class="badge badge-${emp.contract_status || 'active'}">${emp.contract_status || 'active'}</span></td>
+            <td>
+              <div class="btn-group">
+                <button class="btn btn-sm primary" onclick="editEmployee(${emp.user_id})">Edit</button>
+                <button class="btn btn-sm danger" onclick="deleteEmployee(${emp.user_id})">Delete</button>
+              </div>
+            </td>
+          `;
+        });
+      } else {
+        tbody.innerHTML = "<tr><td colspan='9' style='text-align: center; color: #999; padding: 20px;'>No employees found</td></tr>";
+      }
+    } catch (e) {
+      console.error("Failed to load employees:", e);
+    }
+  }
+
+  async function loadContracts() {
+    try {
+      const res = await fetch(API + "?route=manager/contracts", { credentials: "same-origin" });
+      const data = await res.json();
+
+      const tbody = document.getElementById("contractsTableBody");
+
+      if (data.contracts && data.contracts.length > 0) {
+        tbody.innerHTML = "";
+        data.contracts.forEach(contract => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${contract.full_name}</td>
+            <td>${contract.department || '-'}</td>
+            <td>${contract.position || '-'}</td>
+            <td>£${parseFloat(contract.salary || 0).toLocaleString()}</td>
+            <td>${contract.start_date || '-'}</td>
+            <td>${contract.end_date || 'Ongoing'}</td>
+            <td><span class="badge badge-${contract.contract_status}">${contract.contract_status}</span></td>
+            <td>
+              <div class="btn-group">
+                <button class="btn btn-sm primary" onclick="editContract(${contract.contract_id})">Edit</button>
+              </div>
+            </td>
+          `;
+        });
+      } else {
+        tbody.innerHTML = "<tr><td colspan='8' style='text-align: center; color: #999; padding: 20px;'>No contracts found</td></tr>";
+      }
+
+      // Populate employee select for new contracts
+      populateEmployeeSelect();
+    } catch (e) {
+      console.error("Failed to load contracts:", e);
+    }
+  }
+
+  async function loadJobApplications() {
+    try {
+      const res = await fetch(API + "?route=job_applications", { credentials: "same-origin" });
+      const data = await res.json();
+
+      const container = document.getElementById("applicationsContainer");
+
+      if (data.applications && data.applications.length > 0) {
+        container.innerHTML = "";
+        data.applications.forEach(app => {
+          const div = document.createElement("div");
+          div.className = "application-card";
+          div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <div>
+                <h3>${app.full_name}</h3>
+                <p><strong>Email:</strong> ${app.email}</p>
+                <p><strong>Phone:</strong> ${app.phone || '-'}</p>
+                <p><strong>Position:</strong> ${app.position_applied || '-'}</p>
+                <p><strong>Experience:</strong> ${app.experience_years || 0} years</p>
+                <p><strong>Applied:</strong> ${new Date(app.created_at).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <span class="badge badge-${app.status || 'pending'}">${app.status || 'pending'}</span>
+              </div>
+            </div>
+            ${app.status === 'pending' ? `
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+              <button class="btn success btn-sm" onclick="updateApplicationStatus(${app.application_id}, 'approved')">Approve</button>
+              <button class="btn danger btn-sm" onclick="updateApplicationStatus(${app.application_id}, 'rejected')">Reject</button>
+            </div>
+            ` : ''}
+          `;
+          container.appendChild(div);
+        });
+      } else {
+        container.innerHTML = "<p style='text-align: center; color: #999; padding: 20px;'>No job applications found</p>";
+      }
+    } catch (e) {
+      console.error("Failed to load applications:", e);
+    }
+  }
+
+  async function loadAnalytics() {
+    chartsInitialized = true;
+
+    try {
+      const res = await fetch(API + "?route=manager/analytics", { credentials: "same-origin" });
+      const data = await res.json();
+
+      // Revenue Chart
+      const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+      new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+          labels: data.revenue_labels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Revenue (£)',
+            data: data.revenue_data || [0, 0, 0, 0, 0, 0],
+            borderColor: '#3498db',
+            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+
+      // Reservation Status Chart
+      const statusCtx = document.getElementById('statusChart').getContext('2d');
+      new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Active', 'Completed', 'Cancelled'],
+          datasets: [{
+            data: data.reservation_status || [0, 0, 0],
+            backgroundColor: ['#3498db', '#27ae60', '#e74c3c']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+
+      // Vehicle Inspections Chart
+      const vehicleCtx = document.getElementById('vehicleChart').getContext('2d');
+      new Chart(vehicleCtx, {
+        type: 'bar',
+        data: {
+          labels: data.vehicle_labels || ['Routine', 'Entry', 'Exit', 'Damage', 'Random'],
+          datasets: [{
+            label: 'Inspections',
+            data: data.vehicle_data || [0, 0, 0, 0, 0],
+            backgroundColor: '#9b59b6'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      // Department Distribution Chart
+      const deptCtx = document.getElementById('departmentChart').getContext('2d');
+      new Chart(deptCtx, {
+        type: 'pie',
+        data: {
+          labels: data.department_labels || ['Management', 'Operations', 'Customer Service', 'Software Systems'],
+          datasets: [{
+            data: data.department_data || [0, 0, 0, 0],
+            backgroundColor: ['#e74c3c', '#f39c12', '#27ae60', '#3498db']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+
+      // Reports Summary Chart
+      const reportsCtx = document.getElementById('reportsChart').getContext('2d');
+      new Chart(reportsCtx, {
+        type: 'bar',
+        data: {
+          labels: data.report_labels || ['Daily', 'Weekly', 'Monthly'],
+          datasets: [{
+            label: 'Reports Generated',
+            data: data.report_data || [0, 0, 0],
+            backgroundColor: ['#1abc9c', '#e67e22', '#9b59b6']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+    } catch (e) {
+      console.error("Failed to load analytics:", e);
+      // Initialize with empty charts
+      initEmptyCharts();
+    }
+  }
+
+  function initEmptyCharts() {
+    // Initialize charts with zero data if API fails
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+      type: 'line',
+      data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], datasets: [{ label: 'Revenue (£)', data: [0,0,0,0,0,0], borderColor: '#3498db' }] },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+      type: 'doughnut',
+      data: { labels: ['Active', 'Completed', 'Cancelled'], datasets: [{ data: [0,0,0], backgroundColor: ['#3498db', '#27ae60', '#e74c3c'] }] },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const vehicleCtx = document.getElementById('vehicleChart').getContext('2d');
+    new Chart(vehicleCtx, {
+      type: 'bar',
+      data: { labels: ['Routine', 'Entry', 'Exit', 'Damage', 'Random'], datasets: [{ label: 'Inspections', data: [0,0,0,0,0], backgroundColor: '#9b59b6' }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    });
+
+    const deptCtx = document.getElementById('departmentChart').getContext('2d');
+    new Chart(deptCtx, {
+      type: 'pie',
+      data: { labels: ['Management', 'Operations', 'Customer Service', 'Software Systems'], datasets: [{ data: [0,0,0,0], backgroundColor: ['#e74c3c', '#f39c12', '#27ae60', '#3498db'] }] },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    const reportsCtx = document.getElementById('reportsChart').getContext('2d');
+    new Chart(reportsCtx, {
+      type: 'bar',
+      data: { labels: ['Daily', 'Weekly', 'Monthly'], datasets: [{ label: 'Reports', data: [0,0,0], backgroundColor: ['#1abc9c', '#e67e22', '#9b59b6'] }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    });
+  }
+
+  async function loadActivityLogs() {
+    try {
+      let url = API + "?route=activity_logs";
+      const role = document.getElementById("activityRoleFilter").value;
+      const startDate = document.getElementById("activityStartDate").value;
+      const endDate = document.getElementById("activityEndDate").value;
+
+      if (role) url += "&role=" + role;
+      if (startDate) url += "&start_date=" + startDate;
+      if (endDate) url += "&end_date=" + endDate;
+
+      const res = await fetch(url, { credentials: "same-origin" });
+      const data = await res.json();
+
+      const logContainer = document.getElementById("activityLog");
+
+      if (data.logs && data.logs.length > 0) {
+        logContainer.innerHTML = "";
+        data.logs.forEach(log => {
+          const div = document.createElement("div");
+          div.className = "activity-item";
+          div.innerHTML = `
+            <strong>${log.action}</strong> - ${log.description || 'No description'}
+            <br><small style="color: #666;">
+              User: ${log.user_name || log.user_id} |
+              Role: ${log.role} |
+              ${new Date(log.created_at).toLocaleString()}
+            </small>
+          `;
+          logContainer.appendChild(div);
+        });
+      } else {
+        logContainer.innerHTML = '<p style="text-align: center; padding: 20px; color: #999;">No activity logs found</p>';
+      }
+    } catch (e) {
+      console.error("Failed to load activity logs:", e);
+    }
+  }
+
+  // Modal Functions
+  function showAddEmployeeModal() {
+    document.getElementById("addEmployeeForm").reset();
+    document.getElementById("addEmployeeModal").classList.add("active");
+  }
+
+  function showCreateContractModal() {
+    document.getElementById("createContractForm").reset();
+    populateEmployeeSelect();
+    document.getElementById("createContractModal").classList.add("active");
+  }
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove("active");
+  }
+
+  async function populateEmployeeSelect() {
+    if (employeesData.length === 0) {
+      await loadEmployees();
+    }
+    const select = document.getElementById("contractEmployeeSelect");
+    select.innerHTML = '<option value="">Select Employee</option>';
+    employeesData.forEach(emp => {
+      select.innerHTML += `<option value="${emp.user_id}">${emp.full_name} (${emp.role})</option>`;
+    });
+  }
+
+  // Form Submissions
+  async function submitAddEmployee(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData);
+
+    try {
+      const res = await fetch(API + "?route=manager/employees/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Employee added successfully!");
+        closeModal("addEmployeeModal");
+        loadEmployees();
+      } else {
+        let errorMsg = data.error || "Failed to add employee";
+        if (data.debug) {
+          console.error("Server error details:", data.debug);
+          errorMsg += "\n\nTechnical details: " + data.debug;
+        }
+        alert(errorMsg);
+      }
+    } catch (e) {
+      console.error("Add employee error:", e);
+      alert("Error adding employee: " + e.message);
+    }
+  }
+
+  function editEmployee(userId) {
+    const emp = employeesData.find(e => e.user_id == userId);
+    if (!emp) return;
+
+    document.getElementById("editUserId").value = emp.user_id;
+    document.getElementById("editFullName").value = emp.full_name;
+    document.getElementById("editEmail").value = emp.email;
+    document.getElementById("editRole").value = emp.role;
+    document.getElementById("editDepartment").value = emp.department || '';
+    document.getElementById("editPosition").value = emp.position || '';
+    document.getElementById("editMaxHours").value = emp.max_hours || '';
+    document.getElementById("editOperationStatus").value = emp.operation_status || 'completed';
+    document.getElementById("editCurrentShift").value = emp.current_shift || 'Day Shift';
+
+    document.getElementById("editEmployeeModal").classList.add("active");
+  }
+
+  async function submitEditEmployee(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData);
+
+    try {
+      const res = await fetch(API + "?route=manager/employees/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Employee updated successfully!");
+        closeModal("editEmployeeModal");
+        loadEmployees();
+      } else {
+        alert(data.error || "Failed to update employee");
+      }
+    } catch (e) {
+      alert("Error updating employee: " + e.message);
+    }
+  }
+
+  async function deleteEmployee(userId) {
+    if (!confirm("Are you sure you want to delete this employee? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const res = await fetch(API + "?route=manager/employees/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ user_id: userId })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Employee deleted successfully!");
+        loadEmployees();
+      } else {
+        alert(data.error || "Failed to delete employee");
+      }
+    } catch (e) {
+      alert("Error deleting employee: " + e.message);
+    }
+  }
+
+  async function submitCreateContract(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData);
+
+    try {
+      const res = await fetch(API + "?route=employees/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Contract created successfully!");
+        closeModal("createContractModal");
+        loadContracts();
+      } else {
+        alert(data.error || "Failed to create contract");
+      }
+    } catch (e) {
+      alert("Error creating contract: " + e.message);
+    }
+  }
+
+  async function editContract(contractId) {
+    try {
+      const res = await fetch(API + "?route=manager/contracts", { credentials: "same-origin" });
+      const data = await res.json();
+      const contract = data.contracts.find(c => c.contract_id == contractId);
+
+      if (contract) {
+        document.getElementById("editContractId").value = contract.contract_id;
+        document.getElementById("editContractDepartment").value = contract.department || '';
+        document.getElementById("editContractPosition").value = contract.position || '';
+        document.getElementById("editContractSalary").value = contract.salary || '';
+        document.getElementById("editContractStatus").value = contract.contract_status || 'active';
+        document.getElementById("editContractStartDate").value = contract.start_date || '';
+        document.getElementById("editContractEndDate").value = contract.end_date || '';
+
+        document.getElementById("editContractModal").classList.add("active");
+      }
+    } catch (e) {
+      alert("Error loading contract: " + e.message);
+    }
+  }
+
+  async function submitEditContract(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData);
+    const contractId = payload.contract_id;
+    delete payload.contract_id;
+
+    try {
+      const res = await fetch(API + "?route=employees/update&contract_id=" + contractId, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert("Contract updated successfully!");
+        closeModal("editContractModal");
+        loadContracts();
+      } else {
+        alert(data.error || "Failed to update contract");
+      }
+    } catch (e) {
+      alert("Error updating contract: " + e.message);
+    }
+  }
+
+  async function updateApplicationStatus(applicationId, status) {
+    try {
+      const res = await fetch(API + "?route=job_applications/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ application_id: applicationId, status: status })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert(`Application ${status} successfully!`);
+        loadJobApplications();
+      } else {
+        alert(data.error || "Failed to update application");
+      }
+    } catch (e) {
+      alert("Error updating application: " + e.message);
+    }
+  }
+
+  // Close modal when clicking outside
+  document.querySelectorAll('.modal').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('active');
+      }
+    });
+  });
+
+  // Initialize
+  loadOverviewStats();
+</script>
+</body>
+</html>

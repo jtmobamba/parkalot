@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Dashboard - ParkaLot</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .recommendations-section {
+      margin: 20px 0;
+    }
+    .recommendation-card {
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 10px;
+      margin: 15px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .recommendation-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      border-color: #3498db;
+    }
+    .recommendation-card.featured {
+      border-color: #f39c12;
+      background: linear-gradient(to right, #fff9e6, #ffffff);
+    }
+    .recommendation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .recommendation-score {
+      background: #3498db;
+      color: white;
+      padding: 4px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .recommendation-score.featured {
+      background: #f39c12;
+      display: inline-block;
+      padding: 4px 20px;
+      font-size: 14px;
+    }
+    .recommendation-details {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .detail-item {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+    }
+    .detail-item span:first-child {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+    .reasons-list {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 5px;
+    }
+    .reason-tag {
+      display: inline-block;
+      background: #3498db;
+      color: white;
+      padding: 5px 12px;
+      margin: 3px;
+      border-radius: 15px;
+      font-size: 12px;
+    }
+    .loading-spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .user-welcome {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .stat-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #3498db;
+    }
+    .stat-label {
+      color: #666;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+
+    /* Review Section Styles */
+    .review-section {
+      margin: 30px 0;
+    }
+
+    .review-form-card {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .star-rating {
+      display: flex;
+      gap: 8px;
+      margin: 15px 0;
+    }
+
+    .star-rating .star {
+      font-size: 32px;
+      color: #ddd;
+      cursor: pointer;
+      transition: color 0.2s, transform 0.2s;
+    }
+
+    .star-rating .star:hover,
+    .star-rating .star.active {
+      color: #f1c40f;
+      transform: scale(1.1);
+    }
+
+    .star-rating .star.hovered {
+      color: #f39c12;
+    }
+
+    .review-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    .review-textarea:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+
+    .reviews-list {
+      margin-top: 20px;
+    }
+
+    .review-item {
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .review-garage-name {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .review-stars {
+      color: #f1c40f;
+      font-size: 16px;
+    }
+
+    .review-text {
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .review-date {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .no-reviews {
+      text-align: center;
+      color: #999;
+      padding: 30px;
+    }
+
+    .form-message {
+      padding: 12px 15px;
+      border-radius: 5px;
+      margin: 10px 0;
+      font-size: 14px;
+    }
+
+    .form-message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .form-message.error,
+    .form-message:not(.success) {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div class="user-welcome">
+    <h1>Welcome back, <span id="userName">Customer</span>!</h1>
+    <p>Your personalized parking dashboard</p>
+  </div>
+
+  <div class="quick-stats" id="quickStats">
+    <div class="stat-card">
+      <div class="stat-value" id="totalReservations">-</div>
+      <div class="stat-label">Total Reservations</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="activeReservations">-</div>
+      <div class="stat-label">Active Bookings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">£<span id="totalSpent">0.00</span></div>
+      <div class="stat-label">Total Spent</div>
+    </div>
+  </div>
+
+  <div class="recommendations-section">
+    <h2>AI Recommendations - Best Garages For You</h2>
+    <p style="color: #666; margin-bottom: 15px;">Based on your preferences, history, and real-time availability</p>
+    
+    <div id="recommendationsContainer">
+      <div class="loading-spinner"></div>
+    </div>
+  </div>
+
+  <div class="card spacer">
+    <h2>Make a New Reservation</h2>
+    <label>Select Garage</label>
+    <select id="garage_id" class="input-small" style="
+  border-radius: 5px;
+  min-height: 20px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding: 12px;
+  font-size: 14px;"></select>
+
+    <label>Start Time</label>
+    <input id="start_time" type="datetime-local" class="input-small">
+
+    <label>End Time</label>
+    <input id="end_time" type="datetime-local" class="input-small">
+
+    <div id="reserve_msg" class="form-message" style="margin: 10px 0; padding: 12px 15px; border-radius: 5px; display: none; font-size: 14px;"></div>
+    <button type="button" class="btn primary" onclick="reserve()" style="margin-top: 10px;" id="reserveBtn">Reserve Now</button>
+  </div>
+
+  <!-- Garage Review Section -->
+  <div class="review-section">
+    <h2>Rate & Review Garages</h2>
+    <p style="color: #666; margin-bottom: 15px;">Share your experience to help other customers</p>
+
+    <div class="review-form-card">
+      <h3>Write a Review</h3>
+
+      <label>Select Garage</label>
+      <select id="review_garage_id" class="input-small" style="
+        border-radius: 5px;
+        min-height: 20px;
+        margin-top: 8px;
+        margin-bottom: 8px;
+        padding: 12px;
+        font-size: 14px;
+        width: 100%;
+        box-sizing: border-box;">
+        <option value="">-- Select a garage to review --</option>
+      </select>
+
+      <label>Your Rating</label>
+      <div class="star-rating" id="starRating">
+        <span class="star" data-rating="1">&#9733;</span>
+        <span class="star" data-rating="2">&#9733;</span>
+        <span class="star" data-rating="3">&#9733;</span>
+        <span class="star" data-rating="4">&#9733;</span>
+        <span class="star" data-rating="5">&#9733;</span>
+      </div>
+      <input type="hidden" id="selected_rating" value="0">
+
+      <label>Your Review</label>
+      <textarea id="review_text" class="review-textarea" placeholder="Tell us about your experience at this garage..."></textarea>
+
+      <div id="review_msg" class="form-message" style="margin-top: 10px;"></div>
+      <button class="btn primary" onclick="submitReview()" style="margin-top: 15px;">Submit Review</button>
+    </div>
+
+    <h3>Your Recent Reviews</h3>
+    <div class="reviews-list" id="reviewsList">
+      <div class="no-reviews">Loading reviews...</div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 10px; margin-top: 20px;">
+    <button class="btn primary" onclick="goToInvoice()">View Invoice & History</button>
+    <button class="btn danger" onclick="logout()">Logout</button>
+  </div>
+
+</div>
+
+<script>
+  const API = "../api/index.php";
+
+  // Load app.js AFTER API is defined
+</script>
+<script src="js/app.js"></script>
+<script>
+
+  // Load user info and stats on page load
+  async function loadUserInfo() {
+    try {
+      const res = await fetch(API + "?route=me", { credentials: "same-origin" });
+      const data = await res.json();
+      
+      if (data.user_name) {
+        document.getElementById("userName").textContent = data.user_name;
+      }
+      if (data.role && data.role !== 'customer') {
+        // Redirect non-customers to appropriate dashboard
+        window.location.href = `${data.role}_dashboard.html`;
+      }
+    } catch (e) {
+      console.error("Failed to load user info:", e);
+    }
+  }
+
+  // Load AI recommendations
+  async function loadRecommendations() {
+    const container = document.getElementById("recommendationsContainer");
+    
+    try {
+      const res = await fetch(API + "?route=recommendations", { credentials: "same-origin" });
+      const data = await res.json();
+      
+      if (data.recommendations && data.recommendations.length > 0) {
+        container.innerHTML = "";
+        
+        data.recommendations.forEach((rec, index) => {
+          const isFeatured = index === 0; // First recommendation is featured
+          const card = createRecommendationCard(rec, isFeatured);
+          container.appendChild(card);
+        });
+      } else {
+        container.innerHTML = "<p>No recommendations available at the moment.</p>";
+      }
+    } catch (e) {
+      console.error("Failed to load recommendations:", e);
+      container.innerHTML = "<p>Unable to load recommendations. Please try again later.</p>";
+    }
+  }
+
+  // Create recommendation card HTML
+  function createRecommendationCard(rec, isFeatured) {
+    const card = document.createElement("div");
+    card.className = "recommendation-card" + (isFeatured ? " featured" : "");
+    
+    const badge = isFeatured ? "TOP PICK" : "";
+    const scoreColor = rec.recommendation_score >= 80 ? "#27ae60" : 
+                       rec.recommendation_score >= 60 ? "#f39c12" : "#3498db";
+    
+    card.innerHTML = `
+      <div class="recommendation-header">
+        <h3>${rec.garage_name}${badge}</h3>
+        <span class="recommendation-score" style="background: ${scoreColor}">
+          ${rec.recommendation_score}% Match
+        </span>
+      </div>
+      
+      <div class="recommendation-details">
+        <div class="detail-item">
+          <span>Location:</span> ${rec.location}
+        </div>
+        <div class="detail-item">
+          <span>Price:</span>£${rec.price_per_hour}/hr
+        </div>
+        <div class="detail-item">
+          <span>Rating:</span> ${rec.rating}/5.0
+        </div>
+        <div class="detail-item">
+          <span>Spaces:</span> ${rec.total_spaces} total
+        </div>
+      </div>
+      
+      <div class="reasons-list">
+        <strong>Why we recommend this:</strong><br>
+        ${rec.recommendation_reasons.map(r => `<span class="reason-tag">${r}</span>`).join("")}
+      </div>
+      
+      <div style="margin-top: 10px;">
+        <strong>Amenities:</strong> ${rec.amenities || "Standard parking"}
+      </div>
+      
+      <button class="btn primary" style="margin-top: 15px; width: 100%;" 
+              onclick="selectGarage(${rec.garage_id}, '${rec.garage_name}', ${rec.recommendation_score})">
+        Select This Garage
+      </button>
+    `;
+    
+    return card;
+  }
+
+  // Select a garage from recommendations
+  function selectGarage(garageId, garageName, score) {
+    const select = document.getElementById("garage_id");
+    select.value = garageId;
+    
+    // Scroll to reservation form
+    document.querySelector(".card.spacer").scrollIntoView({ behavior: "smooth" });
+    
+    // Log the selection for AI learning
+    fetch(API + "?route=recommendations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ garage_id: garageId, score: score })
+    }).catch(e => console.error("Failed to log selection:", e));
+    
+    showMessage(document.getElementById("reserve_msg"), 
+                `Selected: ${garageName} - Now choose your dates!`, "success");
+  }
+
+  // Load invoice stats
+  async function loadStats() {
+    try {
+      const res = await fetch(API + "?route=invoice", { credentials: "same-origin" });
+      const data = await res.json();
+      
+      if (data.count !== undefined) {
+        document.getElementById("totalReservations").textContent = data.count;
+        document.getElementById("totalSpent").textContent = parseFloat(data.total || 0).toFixed(2);
+        
+        // Calculate active reservations
+        const active = data.reservations ? 
+          data.reservations.filter(r => r.status === 'active').length : 0;
+        document.getElementById("activeReservations").textContent = active;
+      }
+    } catch (e) {
+      console.error("Failed to load stats:", e);
+    }
+  }
+
+  function showMessage(element, message, type = "error") {
+    if (!element) return;
+    element.style.display = "block";
+    element.textContent = message;
+    if (type === "success") {
+      element.className = "form-message success";
+      element.style.background = "#d4edda";
+      element.style.color = "#155724";
+    } else {
+      element.className = "form-message error";
+      element.style.background = "#f8d7da";
+      element.style.color = "#721c24";
+    }
+  }
+
+  // Check authentication before loading dashboard
+  async function checkAuth() {
+    try {
+      const res = await fetch(API + "?route=me", { credentials: "same-origin" });
+      if (!res.ok) {
+        window.location.href = "index.html";
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.error("Auth check failed:", err);
+      window.location.href = "index.html";
+      return false;
+    }
+  }
+  
+  // Initialize dashboard
+  async function initDashboard() {
+    const isAuth = await checkAuth();
+    if (isAuth) {
+      if (typeof loadGarages === "function") loadGarages();
+      loadUserInfo();
+      loadRecommendations();
+      loadStats();
+      loadReviewGarages();
+      loadUserReviews();
+      initStarRating();
+      initDateTimeInputs();
+    }
+  }
+
+  // Initialize datetime inputs with minimum values
+  function initDateTimeInputs() {
+    const startInput = document.getElementById("start_time");
+    const endInput = document.getElementById("end_time");
+
+    if (startInput && endInput) {
+      // Set minimum to current time
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      const minDateTime = now.toISOString().slice(0, 16);
+
+      startInput.min = minDateTime;
+      endInput.min = minDateTime;
+
+      // Update end time min when start time changes
+      startInput.addEventListener("change", function() {
+        if (this.value) {
+          endInput.min = this.value;
+          // If end time is before start time, reset it
+          if (endInput.value && endInput.value <= this.value) {
+            endInput.value = "";
+          }
+        }
+      });
+    }
+  }
+
+  // Initialize star rating functionality
+  function initStarRating() {
+    const starContainer = document.getElementById("starRating");
+    const stars = starContainer.querySelectorAll(".star");
+    const ratingInput = document.getElementById("selected_rating");
+
+    stars.forEach(star => {
+      star.addEventListener("click", function() {
+        const rating = parseInt(this.dataset.rating);
+        ratingInput.value = rating;
+        updateStars(rating);
+      });
+
+      star.addEventListener("mouseenter", function() {
+        const rating = parseInt(this.dataset.rating);
+        highlightStars(rating);
+      });
+
+      star.addEventListener("mouseleave", function() {
+        const currentRating = parseInt(ratingInput.value) || 0;
+        updateStars(currentRating);
+      });
+    });
+  }
+
+  function updateStars(rating) {
+    const stars = document.querySelectorAll("#starRating .star");
+    stars.forEach((star, index) => {
+      if (index < rating) {
+        star.classList.add("active");
+      } else {
+        star.classList.remove("active");
+      }
+      star.classList.remove("hovered");
+    });
+  }
+
+  function highlightStars(rating) {
+    const stars = document.querySelectorAll("#starRating .star");
+    stars.forEach((star, index) => {
+      if (index < rating) {
+        star.classList.add("hovered");
+      } else {
+        star.classList.remove("hovered");
+      }
+    });
+  }
+
+  // Load garages for review dropdown
+  async function loadReviewGarages() {
+    const select = document.getElementById("review_garage_id");
+    try {
+      const { res, data } = await apiGet("/garages");
+      const garages = data && data.garages;
+
+      if (res.ok && Array.isArray(garages)) {
+        garages.forEach(g => {
+          const opt = document.createElement("option");
+          opt.value = g.garage_id;
+          opt.textContent = g.garage_name || `Garage #${g.garage_id}`;
+          select.appendChild(opt);
+        });
+      }
+    } catch (e) {
+      console.error("Failed to load garages for review:", e);
+    }
+  }
+
+  // Submit a review
+  async function submitReview() {
+    const garageId = document.getElementById("review_garage_id").value;
+    const rating = parseInt(document.getElementById("selected_rating").value);
+    const reviewText = document.getElementById("review_text").value.trim();
+    const msgEl = document.getElementById("review_msg");
+
+    // Validation
+    if (!garageId) {
+      showMessage(msgEl, "Please select a garage to review.", "error");
+      return;
+    }
+    if (rating < 1 || rating > 5) {
+      showMessage(msgEl, "Please select a rating between 1 and 5 stars.", "error");
+      return;
+    }
+    if (!reviewText) {
+      showMessage(msgEl, "Please write a review.", "error");
+      return;
+    }
+
+    msgEl.style.color = "#3498db";
+    msgEl.textContent = "Submitting review...";
+    msgEl.style.display = "block";
+
+    try {
+      const { res, data } = await apiPost("/reviews", {
+        garage_id: garageId,
+        rating: rating,
+        review_text: reviewText
+      });
+
+      if (res.ok && data && data.success) {
+        showMessage(msgEl, "Review submitted successfully!", "success");
+        // Reset form
+        document.getElementById("review_garage_id").value = "";
+        document.getElementById("selected_rating").value = "0";
+        document.getElementById("review_text").value = "";
+        updateStars(0);
+        // Reload reviews
+        loadUserReviews();
+      } else {
+        showMessage(msgEl, data.error || "Failed to submit review.", "error");
+      }
+    } catch (e) {
+      console.error("Submit review error:", e);
+      showMessage(msgEl, "Network error. Please try again.", "error");
+    }
+  }
+
+  // Load user's reviews
+  async function loadUserReviews() {
+    const container = document.getElementById("reviewsList");
+
+    try {
+      const { res, data } = await apiGet("/reviews");
+
+      if (res.ok && data && data.reviews && data.reviews.length > 0) {
+        container.innerHTML = "";
+        data.reviews.forEach(review => {
+          const reviewEl = createReviewElement(review);
+          container.appendChild(reviewEl);
+        });
+      } else {
+        container.innerHTML = '<div class="no-reviews">You haven\'t written any reviews yet.</div>';
+      }
+    } catch (e) {
+      console.error("Failed to load reviews:", e);
+      container.innerHTML = '<div class="no-reviews">Unable to load reviews.</div>';
+    }
+  }
+
+  // Create review element
+  function createReviewElement(review) {
+    const div = document.createElement("div");
+    div.className = "review-item";
+
+    const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
+    const date = new Date(review.created_at).toLocaleDateString("en-GB", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
+
+    div.innerHTML = `
+      <div class="review-header">
+        <span class="review-garage-name">${review.garage_name || 'Garage #' + review.garage_id}</span>
+        <span class="review-stars">${stars}</span>
+      </div>
+      <p class="review-text">${review.review_text}</p>
+      <span class="review-date">Posted on ${date}</span>
+    `;
+
+    return div;
+  }
+
+  // Check if app.js loaded correctly
+  document.addEventListener("DOMContentLoaded", function() {
+    console.log("DOM loaded, checking reserve function...");
+    if (typeof reserve !== "function") {
+      console.error("ERROR: reserve function not loaded!");
+      const msgEl = document.getElementById("reserve_msg");
+      if (msgEl) {
+        msgEl.style.display = "block";
+        msgEl.style.background = "#f8d7da";
+        msgEl.style.color = "#721c24";
+        msgEl.innerText = "Error: JavaScript failed to load. Please refresh the page.";
+      }
+    } else {
+      console.log("reserve function is available");
+    }
+  });
+
+  // Start initialization
+  initDashboard();
+</script>
+</body>
+</html>

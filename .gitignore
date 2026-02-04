@@ -1,0 +1,40 @@
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Logs
+logs/
+*.log
+
+# Uploads (user content)
+uploads/*
+!uploads/.gitkeep
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+nul
+
+# Dependencies (if using composer)
+/vendor/
+
+# Docker volumes
+parkalot_db_data/
+
+# Test coverage
+coverage/
+.phpunit.result.cache
