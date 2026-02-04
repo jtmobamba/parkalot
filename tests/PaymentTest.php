@@ -106,7 +106,7 @@ class PaymentTest {
         $this->runner->addTest('Discount calculation applies correctly', function() {
             $applyDiscount = function($amount, $discountPercent) {
                 if ($discountPercent < 0 || $discountPercent > 100) {
-                    return $amount;
+                    return round((float)$amount, 2);
                 }
                 $discount = $amount * ($discountPercent / 100);
                 return round($amount - $discount, 2);
