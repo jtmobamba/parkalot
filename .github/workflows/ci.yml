@@ -100,6 +100,9 @@ jobs:
       - name: Run Security Tests (STRIDE Verification)
         run: php tests/SecurityTest.php
 
+      - name: Run Hardening Tests
+        run: php tests/HardeningTest.php
+
       - name: Run Full Test Suite
         run: php tests/RunAllTests.php
 
@@ -111,6 +114,7 @@ jobs:
           echo "- Reservation Tests: ✓" >> $GITHUB_STEP_SUMMARY
           echo "- Payment Tests: ✓" >> $GITHUB_STEP_SUMMARY
           echo "- Security Tests (STRIDE): ✓" >> $GITHUB_STEP_SUMMARY
+          echo "- Hardening Tests: ✓" >> $GITHUB_STEP_SUMMARY
 
   # ═══════════════════════════════════════════════════════════════════
   # JOB 3: SECURITY SCANNING

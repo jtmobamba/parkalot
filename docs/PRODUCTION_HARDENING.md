@@ -317,31 +317,76 @@ $uploadPath = __DIR__ . '/../uploads/' . $safeFilename;
 
 ---
 
-## 9. Production Checklist
+## 9. Production Deployment Checklist
 
-### Pre-Deployment
+### 9.1 Pre-Deployment Checks
 
-- [ ] All debug statements removed
-- [ ] Error display disabled
-- [ ] Secure database credentials configured
-- [ ] HTTPS enabled
-- [ ] Security headers configured
-- [ ] File permissions set correctly
+| Check | Command/Action | Status |
+|-------|----------------|--------|
+| Debug statements removed | `grep -r "var_dump\|print_r" --include="*.php"` | ☐ |
+| Error display disabled | `ini_get('display_errors') === '0'` | ☐ |
+| APP_ENV set to production | `getenv('APP_ENV') === 'production'` | ☐ |
+| Database credentials secured | Environment variables, not hardcoded | ☐ |
+| HTTPS enabled | SSL certificate installed | ☐ |
+| Security headers configured | `setSecurityHeaders()` called | ☐ |
+| File permissions set | `chmod 755` for directories, `644` for files | ☐ |
+| Uploads directory secured | Outside web root or with `.htaccess` | ☐ |
 
-### Runtime
+### 9.2 Security Configuration
 
-- [ ] Rate limiting active
-- [ ] Session timeout configured
-- [ ] Activity logging enabled
-- [ ] Error logging enabled
-- [ ] Backup procedures in place
+| Setting | Development | Production |
+|---------|-------------|------------|
+| `display_errors` | `1` | `0` |
+| `log_errors` | `1` | `1` |
+| `session.cookie_secure` | `0` | `1` |
+| `session.cookie_httponly` | `1` | `1` |
+| `session.use_strict_mode` | `1` | `1` |
 
-### Monitoring
+### 9.3 Runtime Checks
 
-- [ ] Error logs monitored
-- [ ] Activity logs reviewed
-- [ ] Performance metrics tracked
-- [ ] Security alerts configured
+| Check | Description | Status |
+|-------|-------------|--------|
+| Rate limiting | API endpoints protected | ☐ |
+| Session timeout | 1 hour maximum | ☐ |
+| Activity logging | All actions logged | ☐ |
+| Error logging | Errors logged to file | ☐ |
+| CSRF protection | Tokens validated | ☐ |
+| Input validation | All inputs sanitized | ☐ |
+
+### 9.4 Automated Deployment Check
+
+```php
+// Run deployment readiness check
+require_once 'config/hardening.php';
+$status = DeploymentChecklist::getStatus();
+
+echo "Deployment Ready: " . ($status['ready'] ? 'YES' : 'NO') . "\n";
+echo "Checks Passed: {$status['passed']}/{$status['total_checks']}\n";
+
+foreach ($status['checks'] as $name => $check) {
+    $icon = $check['passed'] ? '✓' : '✗';
+    echo "  $icon {$check['name']}\n";
+}
+```
+
+### 9.5 Monitoring Setup
+
+| Component | Tool/Method | Frequency |
+|-----------|-------------|-----------|
+| Error logs | `tail -f logs/app.log` | Real-time |
+| Activity logs | Database query | Daily review |
+| Performance | Server metrics | Hourly |
+| Security alerts | Log monitoring | Real-time |
+| Backups | Automated script | Daily |
+
+### 9.6 Rollback Procedure
+
+1. **Identify Issue**: Check error logs for failure cause
+2. **Stop Traffic**: Enable maintenance mode
+3. **Rollback Code**: `git checkout <previous-tag>`
+4. **Rollback Database**: Restore from backup if needed
+5. **Verify**: Run deployment checks
+6. **Resume Traffic**: Disable maintenance mode
 
 ---
 
