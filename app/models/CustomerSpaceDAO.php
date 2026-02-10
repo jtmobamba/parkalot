@@ -67,7 +67,15 @@ class CustomerSpaceDAO
             return ['success' => false, 'error' => 'Failed to create listing'];
         } catch (PDOException $e) {
             error_log("CustomerSpaceDAO::create error: " . $e->getMessage());
-            return ['success' => false, 'error' => 'Database error creating listing'];
+            error_log("CustomerSpaceDAO::create SQL state: " . $e->getCode());
+            // Return more specific error for debugging
+            $errorMsg = $e->getMessage();
+            if (strpos($errorMsg, 'foreign key constraint') !== false || strpos($errorMsg, 'FOREIGN KEY') !== false) {
+                return ['success' => false, 'error' => 'Invalid user account. Please log in again.'];
+            } elseif (strpos($errorMsg, "doesn't exist") !== false || strpos($errorMsg, 'does not exist') !== false) {
+                return ['success' => false, 'error' => 'Database table not found. Please contact support.'];
+            }
+            return ['success' => false, 'error' => 'Database error creating listing: ' . $e->getMessage()];
         }
     }
 
@@ -142,7 +150,7 @@ class CustomerSpaceDAO
     public function getById(int $spaceId): ?array
     {
         $stmt = $this->db->prepare("
-            SELECT cs.*, u.name as owner_name, u.email as owner_email
+            SELECT cs.*, u.full_name as owner_name, u.email as owner_email
             FROM customer_spaces cs
             JOIN users u ON cs.owner_id = u.user_id
             WHERE cs.space_id = ?
