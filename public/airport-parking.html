@@ -1689,9 +1689,14 @@
         }
 
         async function bookParking(carParkId) {
-            // Check authentication
-            const token = localStorage.getItem('parkalot_token') || sessionStorage.getItem('parkalot_token');
-            if (!token) {
+            // Check authentication via session
+            try {
+                const authRes = await fetch('/api/index.php?route=me', { credentials: 'same-origin' });
+                if (!authRes.ok) {
+                    window.location.href = 'index.html?redirect=airport-parking&airport=' + selectedAirport;
+                    return;
+                }
+            } catch (e) {
                 window.location.href = 'index.html?redirect=airport-parking&airport=' + selectedAirport;
                 return;
             }
@@ -1943,13 +1948,12 @@
 
         async function createAirportBooking(paymentResult) {
             try {
-                const token = localStorage.getItem('parkalot_token') || sessionStorage.getItem('parkalot_token');
                 const response = await fetch('/api/index.php?route=airport-booking', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Content-Type': 'application/json'
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         car_park_id: currentBooking.carParkId,
                         car_park_name: currentBooking.carParkName,

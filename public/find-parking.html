@@ -1016,10 +1016,15 @@
 
     // Book space - show payment modal
     async function bookSpace(garageId) {
-      // Check if user is logged in
-      const token = localStorage.getItem('parkalot_token') || sessionStorage.getItem('parkalot_token');
-      if (!token) {
-        // Redirect to login with return URL
+      // Check if user is logged in via session
+      try {
+        const authRes = await fetch(API + '?route=me', { credentials: 'same-origin' });
+        if (!authRes.ok) {
+          // Not logged in - redirect to login with return URL
+          window.location.href = `index.html?redirect=find-parking&garage=${garageId}`;
+          return;
+        }
+      } catch (e) {
         window.location.href = `index.html?redirect=find-parking&garage=${garageId}`;
         return;
       }
@@ -1170,13 +1175,12 @@
     // Create reservation after payment
     async function createReservation(paymentResult) {
       try {
-        const token = localStorage.getItem('parkalot_token') || sessionStorage.getItem('parkalot_token');
         const response = await fetch(API + '?route=reservations', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
+          credentials: 'same-origin',
           body: JSON.stringify({
             garage_id: currentBooking.garageId,
             start_time: currentBooking.startTime.toISOString(),
