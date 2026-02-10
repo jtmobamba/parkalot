@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parking Space Gallery - ParkaLot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Nunito', sans-serif; color: #333; background: #f9fafb; min-height: 100vh; }
+
+    .navbar { background: white; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+    .navbar-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .navbar-brand span { font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; color: #2563eb; }
+    .navbar-menu { display: flex; gap: 25px; list-style: none; align-items: center; }
+    .navbar-menu a { color: #333; text-decoration: none; font-weight: 600; font-size: 15px; }
+    .navbar-menu a:hover { color: #2563eb; }
+    .btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; font-size: 15px; border: none; transition: all 0.3s; }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+
+    .hero-section {
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+      color: white;
+      padding: 60px 5%;
+      text-align: center;
+    }
+    .hero-section h1 { font-family: 'Poppins', sans-serif; font-size: 42px; margin-bottom: 16px; }
+    .hero-section p { font-size: 18px; opacity: 0.9; max-width: 600px; margin: 0 auto 24px; }
+
+    .filters-section {
+      background: white;
+      padding: 20px 5%;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+    }
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .filter-group label { font-weight: 600; font-size: 14px; color: #6b7280; }
+    .filter-group select, .filter-group input {
+      padding: 10px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      min-width: 150px;
+    }
+
+    .gallery-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 5%;
+    }
+
+    .gallery-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .gallery-header h2 { font-family: 'Poppins', sans-serif; font-size: 24px; }
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #10b981;
+    }
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.2); }
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+    }
+
+    .gallery-card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+    .gallery-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    }
+    .gallery-card.new {
+      animation: fadeInUp 0.5s ease-out;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background: #f3f4f6;
+    }
+    .card-image-placeholder {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, #e5e7eb 0%, #f3f4f6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      color: #9ca3af;
+    }
+
+    .card-content { padding: 20px; }
+    .card-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #1f2937; }
+    .card-location { font-size: 14px; color: #6b7280; margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
+    .card-meta { display: flex; justify-content: space-between; align-items: center; }
+    .card-price { font-size: 20px; font-weight: 700; color: #2563eb; }
+    .card-price span { font-size: 14px; font-weight: 400; color: #6b7280; }
+    .card-rating { display: flex; align-items: center; gap: 4px; font-size: 14px; color: #f59e0b; }
+
+    .amenities-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .amenity-tag {
+      background: #f3f4f6;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .load-more {
+      display: block;
+      margin: 40px auto;
+      padding: 16px 48px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6b7280;
+    }
+    .no-results h3 { font-size: 24px; margin-bottom: 12px; color: #374151; }
+
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+    }
+    .loading-spinner::after {
+      content: "";
+      width: 40px;
+      height: 40px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .hero-section h1 { font-size: 28px; }
+      .gallery-grid { grid-template-columns: 1fr; }
+      .filters-section { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="home.html" class="navbar-brand">
+    <img src="images/logo.svg" alt="ParkaLot" height="40">
+    <span>ParkaLot</span>
+  </a>
+  <ul class="navbar-menu">
+    <li><a href="find-parking.html">Find Parking</a></li>
+    <li><a href="space-gallery.html" style="color: #2563eb;">Gallery</a></li>
+    <li><a href="list-your-space.html">List Your Space</a></li>
+    <li><a href="customer_dashboard.html" class="btn btn-primary">Dashboard</a></li>
+  </ul>
+</nav>
+
+<section class="hero-section">
+  <h1>Explore Parking Spaces</h1>
+  <p>Browse photos of available garages, driveways, and parking spots shared by our community</p>
+  <a href="list-your-space.html" class="btn btn-success">Share Your Space & Earn</a>
+</section>
+
+<section class="filters-section">
+  <div class="filter-group">
+    <label>Type:</label>
+    <select id="filterType" onchange="applyFilters()">
+      <option value="">All Types</option>
+      <option value="garage">Garage</option>
+      <option value="driveway">Driveway</option>
+      <option value="parking_spot">Parking Spot</option>
+      <option value="car_park">Car Park</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Location:</label>
+    <input type="text" id="filterLocation" placeholder="City or postcode" onkeyup="debounceFilter()">
+  </div>
+  <div class="filter-group">
+    <label>Sort:</label>
+    <select id="filterSort" onchange="applyFilters()">
+      <option value="newest">Newest First</option>
+      <option value="price_low">Price: Low to High</option>
+      <option value="price_high">Price: High to Low</option>
+      <option value="rating">Highest Rated</option>
+    </select>
+  </div>
+</section>
+
+<div class="gallery-container">
+  <div class="gallery-header">
+    <h2>Recently Added Spaces</h2>
+    <div class="live-indicator">
+      <span class="live-dot"></span>
+      <span>Live Updates</span>
+    </div>
+  </div>
+
+  <div id="galleryGrid" class="gallery-grid">
+    <div class="loading-spinner"></div>
+  </div>
+
+  <button id="loadMoreBtn" class="btn btn-primary load-more" style="display: none;" onclick="loadMore()">
+    Load More Spaces
+  </button>
+</div>
+
+<script>
+  const API = "../api/index.php";
+  let allSpaces = [];
+  let displayedSpaces = [];
+  let offset = 0;
+  const LIMIT = 12;
+  let lastTimestamp = null;
+  let pollingInterval = null;
+  let filterTimeout = null;
+
+  // Amenity display names
+  const amenityNames = {
+    covered: 'Covered',
+    cctv: 'CCTV',
+    ev_charging: 'EV Charging',
+    '24_7_access': '24/7 Access',
+    disabled_access: 'Accessible',
+    security_lighting: 'Lit'
+  };
+
+  // Load gallery spaces
+  async function loadGallery(reset = true) {
+    const grid = document.getElementById('galleryGrid');
+
+    if (reset) {
+      offset = 0;
+      allSpaces = [];
+      grid.innerHTML = '<div class="loading-spinner"></div>';
+    }
+
+    try {
+      const res = await fetch(`${API}?route=spaces/gallery&limit=${LIMIT}&offset=${offset}`);
+      const data = await res.json();
+
+      if (data.success && data.spaces) {
+        if (reset && data.spaces.length === 0) {
+          grid.innerHTML = `
+            <div class="no-results" style="grid-column: 1/-1;">
+              <h3>No spaces available yet</h3>
+              <p>Be the first to share your parking space!</p>
+              <a href="list-your-space.html" class="btn btn-success" style="margin-top: 20px;">List Your Space</a>
+            </div>
+          `;
+          document.getElementById('loadMoreBtn').style.display = 'none';
+          return;
+        }
+
+        allSpaces = reset ? data.spaces : [...allSpaces, ...data.spaces];
+        lastTimestamp = data.timestamp;
+
+        applyFilters();
+
+        document.getElementById('loadMoreBtn').style.display =
+          data.spaces.length >= LIMIT ? 'block' : 'none';
+
+        offset += data.spaces.length;
+
+        // Start polling for updates
+        startPolling();
+      }
+    } catch (e) {
+      console.error('Failed to load gallery:', e);
+      grid.innerHTML = `
+        <div class="no-results" style="grid-column: 1/-1;">
+          <h3>Unable to load spaces</h3>
+          <p>Please try again later.</p>
+        </div>
+      `;
+    }
+  }
+
+  // Apply filters and sort
+  function applyFilters() {
+    const type = document.getElementById('filterType').value;
+    const location = document.getElementById('filterLocation').value.toLowerCase();
+    const sort = document.getElementById('filterSort').value;
+
+    let filtered = [...allSpaces];
+
+    // Filter by type
+    if (type) {
+      filtered = filtered.filter(s => s.space_type === type);
+    }
+
+    // Filter by location
+    if (location) {
+      filtered = filtered.filter(s =>
+        (s.city && s.city.toLowerCase().includes(location)) ||
+        (s.postcode && s.postcode.toLowerCase().includes(location))
+      );
+    }
+
+    // Sort
+    switch (sort) {
+      case 'price_low':
+        filtered.sort((a, b) => parseFloat(a.price_per_hour) - parseFloat(b.price_per_hour));
+        break;
+      case 'price_high':
+        filtered.sort((a, b) => parseFloat(b.price_per_hour) - parseFloat(a.price_per_hour));
+        break;
+      case 'rating':
+        filtered.sort((a, b) => (parseFloat(b.average_rating) || 0) - (parseFloat(a.average_rating) || 0));
+        break;
+      default:
+        // Newest first (default)
+        filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
+    displayedSpaces = filtered;
+    renderGallery();
+  }
+
+  // Debounce filter input
+  function debounceFilter() {
+    clearTimeout(filterTimeout);
+    filterTimeout = setTimeout(applyFilters, 300);
+  }
+
+  // Render gallery grid
+  function renderGallery(newSpaces = null) {
+    const grid = document.getElementById('galleryGrid');
+
+    if (newSpaces) {
+      // Prepend new spaces with animation
+      newSpaces.forEach(space => {
+        const card = createSpaceCard(space, true);
+        grid.insertBefore(card, grid.firstChild);
+      });
+    } else {
+      // Full render
+      if (displayedSpaces.length === 0) {
+        grid.innerHTML = `
+          <div class="no-results" style="grid-column: 1/-1;">
+            <h3>No matching spaces found</h3>
+            <p>Try adjusting your filters.</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = '';
+      displayedSpaces.forEach(space => {
+        grid.appendChild(createSpaceCard(space));
+      });
+    }
+  }
+
+  // Create space card element
+  function createSpaceCard(space, isNew = false) {
+    const card = document.createElement('div');
+    card.className = 'gallery-card' + (isNew ? ' new' : '');
+    card.onclick = () => window.location.href = `find-parking.html?space=${space.space_id}`;
+
+    const photo = space.photos && space.photos.length > 0 ? space.photos[0] : null;
+    const rating = parseFloat(space.average_rating) || 0;
+    const stars = rating > 0 ? '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating)) : 'No reviews';
+
+    const amenities = space.amenities || [];
+    const amenityTags = amenities.slice(0, 3).map(a => amenityNames[a] || a).join('');
+
+    card.innerHTML = `
+      ${photo ?
+        `<img class="card-image" src="${photo}" alt="${space.space_name}" onerror="this.outerHTML='<div class=\\'card-image-placeholder\\'>🅿️</div>'">` :
+        '<div class="card-image-placeholder">🅿️</div>'
+      }
+      <div class="card-content">
+        <h3 class="card-title">${space.space_name}</h3>
+        <div class="card-location">📍 ${space.city}${space.postcode ? ', ' + space.postcode : ''}</div>
+        <div class="card-meta">
+          <div class="card-price">£${parseFloat(space.price_per_hour).toFixed(2)} <span>/hour</span></div>
+          <div class="card-rating">${stars}</div>
+        </div>
+        ${amenities.length > 0 ? `
+          <div class="amenities-tags">
+            ${amenities.slice(0, 4).map(a => `<span class="amenity-tag">${amenityNames[a] || a}</span>`).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    return card;
+  }
+
+  // Load more spaces
+  function loadMore() {
+    loadGallery(false);
+  }
+
+  // Poll for new spaces
+  function startPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+
+    pollingInterval = setInterval(async () => {
+      if (!lastTimestamp) return;
+
+      try {
+        const res = await fetch(`${API}?route=spaces/gallery&limit=10&offset=0&since=${encodeURIComponent(lastTimestamp)}`);
+        const data = await res.json();
+
+        if (data.success && data.spaces && data.spaces.length > 0) {
+          // Add new spaces to the beginning
+          const newSpaces = data.spaces.filter(
+            ns => !allSpaces.some(s => s.space_id === ns.space_id)
+          );
+
+          if (newSpaces.length > 0) {
+            allSpaces = [...newSpaces, ...allSpaces];
+            lastTimestamp = data.timestamp;
+            applyFilters();
+            renderGallery(newSpaces);
+          }
+        }
+      } catch (e) {
+        console.error('Polling error:', e);
+      }
+    }, 30000); // Poll every 30 seconds
+  }
+
+  // Stop polling when page is hidden
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (pollingInterval) clearInterval(pollingInterval);
+    } else {
+      startPolling();
+    }
+  });
+
+  // Initialize
+  loadGallery();
+</script>
+
+</body>
+</html>

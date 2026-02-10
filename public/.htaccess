@@ -1,0 +1,31 @@
+# ParkaLot System - Apache Configuration
+# Handles URL rewriting for clean URLs and API access
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Set the base path (adjust if running from subdirectory)
+# RewriteBase /
+
+# Front controller pattern for SPA
+# If the requested file or directory doesn't exist, serve the requested HTML file or index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteRule ^([^.]+)$ $1.html [L]
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes
+
+# Protect sensitive files
+<FilesMatch "\.(env|json|lock|md|gitignore|sql)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

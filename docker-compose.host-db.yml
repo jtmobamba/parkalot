@@ -1,0 +1,85 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║     PARKALOT SYSTEM - DOCKER WITH HOST MYSQL (XAMPP)              ║
+# ║                                                                    ║
+# ║  This configuration runs only the PHP/Apache container and        ║
+# ║  connects to your existing XAMPP MySQL database.                  ║
+# ║                                                                    ║
+# ║  Usage:                                                            ║
+# ║    docker-compose -f docker-compose.host-db.yml up -d --build     ║
+# ║    OR simply run: docker-start.bat                                ║
+# ║                                                                    ║
+# ║  Access the application at: http://localhost:8080                 ║
+# ║  phpMyAdmin remains at: http://localhost:8081 (if configured)     ║
+# ║  MySQL database: port 3306 (standard XAMPP MySQL port)            ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+services:
+  # ─────────────────────────────────────────────────────────────────────
+  # APPLICATION SERVER (connects to host XAMPP MySQL)
+  # ─────────────────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parkalot_app
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      # Connect to host machine's MySQL (XAMPP)
+      # host.docker.internal resolves to the host machine on Windows/Mac
+      # MySQL typically runs on port 3306
+      - DB_HOST=host.docker.internal
+      - DB_PORT=3306
+      - DB_NAME=parkalotdb
+      - DB_USER=root
+      - DB_PASSWORD=
+      # Application settings
+      - APP_ENV=development
+      - APP_DEBUG=true
+    volumes:
+      # Mount source directories for live development
+      - ./public:/var/www/html/public
+      - ./api:/var/www/html/api
+      - ./app:/var/www/html/app
+      - ./config:/var/www/html/config
+      - ./uploads:/var/www/html/uploads
+      - ./logs:/var/www/html/logs
+    extra_hosts:
+      # This allows 'host.docker.internal' to resolve to host machine
+      # Required for Linux (Windows/Mac have this by default)
+      - "host.docker.internal:host-gateway"
+    networks:
+      - parkalot_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/index.php?route=garages"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ─────────────────────────────────────────────────────────────────────
+  # DATABASE ADMIN (PHPMYADMIN)
+  # ─────────────────────────────────────────────────────────────────────
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: parkalot_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: host.docker.internal
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: ""
+    ports:
+      - "8081:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - parkalot_network
+
+# ─────────────────────────────────────────────────────────────────────
+# NETWORKS
+# ─────────────────────────────────────────────────────────────────────
+networks:
+  parkalot_network:
+    driver: bridge

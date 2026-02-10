@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Senior Employee Dashboard - ParkaLot</title>
   <link rel="stylesheet" href="css/style.css">
+  <!-- Anime.js for animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
   <style>
     .senior-header {
       background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
@@ -195,12 +197,21 @@
 </head>
 <body>
 
-<div class="container">
+<div class="dashboard-container" style="position: relative;">
+  <!-- Floating Stickers -->
+  <div class="sticker sticker-orange sticker-float" style="position: fixed; top: 90px; right: 25px; z-index: 100;">SENIOR</div>
+  <div class="sticker sticker-blue sticker-float" style="position: fixed; top: 180px; left: 20px; z-index: 100; animation-delay: 0.6s;">TEAM</div>
+  <div class="sticker sticker-purple sticker-float" style="position: fixed; bottom: 130px; right: 35px; z-index: 100; animation-delay: 1.1s;">LEAD</div>
 
-  <div class="senior-header">
-    <h1>Senior Employee Dashboard</h1>
-    <p>Welcome, <span id="seniorName">-</span></p>
-    <p style="font-size: 14px; opacity: 0.9;">Department: <span id="userDepartment">-</span> | Team management and operations oversight</p>
+  <div class="senior-header animate-on-load" style="position: relative; overflow: hidden;">
+    <!-- Background Image -->
+    <img src="images/IMG_0076.jpeg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15;" alt="">
+    <div style="position: relative; z-index: 1;">
+      <div class="retro-icon" style="background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%); width: 60px; height: 60px; font-size: 28px; margin-bottom: 15px;">⭐</div>
+      <h1>Senior Employee Dashboard</h1>
+      <p>Welcome, <span id="seniorName">-</span></p>
+      <p style="font-size: 14px; opacity: 0.9;">Department: <span id="userDepartment">-</span> | Team management and operations oversight</p>
+    </div>
   </div>
 
   <div class="tabs">
@@ -876,6 +887,87 @@
 
   // Initialize
   loadSeniorInfo();
+
+  // Anime.js Animations
+  document.addEventListener('DOMContentLoaded', function() {
+    // Animate header
+    anime({
+      targets: '.senior-header',
+      translateY: [-30, 0],
+      opacity: [0, 1],
+      duration: 800,
+      easing: 'easeOutExpo'
+    });
+
+    // Animate tabs
+    anime({
+      targets: '.tab',
+      translateY: [20, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(80, {start: 300}),
+      duration: 500,
+      easing: 'easeOutBack'
+    });
+
+    // Animate team cards
+    anime({
+      targets: '.team-card, .card',
+      translateY: [40, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(100, {start: 500}),
+      duration: 600,
+      easing: 'easeOutExpo'
+    });
+
+    // Floating stickers animation
+    anime({
+      targets: '.sticker-float',
+      translateY: [-12, 12],
+      rotate: [-6, 6],
+      loop: true,
+      direction: 'alternate',
+      easing: 'easeInOutSine',
+      duration: 2200,
+      delay: anime.stagger(350)
+    });
+
+    // Performance bar animation
+    setTimeout(() => {
+      const fillEl = document.getElementById('performanceFill');
+      if (fillEl) {
+        const width = fillEl.style.width;
+        fillEl.style.width = '0%';
+        anime({
+          targets: fillEl,
+          width: width,
+          duration: 1500,
+          easing: 'easeOutExpo'
+        });
+      }
+    }, 800);
+
+    // Button and tab hover effects
+    document.querySelectorAll('.btn, .tab').forEach(el => {
+      el.addEventListener('mouseenter', () => {
+        if (!el.classList.contains('active')) {
+          anime({
+            targets: el,
+            scale: 1.05,
+            duration: 200,
+            easing: 'easeOutQuad'
+          });
+        }
+      });
+      el.addEventListener('mouseleave', () => {
+        anime({
+          targets: el,
+          scale: 1,
+          duration: 200,
+          easing: 'easeOutQuad'
+        });
+      });
+    });
+  });
 </script>
 </body>
 </html>

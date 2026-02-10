@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Employee Dashboard - ParkaLot</title>
   <link rel="stylesheet" href="css/style.css">
+  <!-- GSAP Animation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <style>
     .employee-header {
       background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
@@ -44,23 +47,34 @@
 </head>
 <body>
 
-<div class="container">
-  
-  <div class="employee-header">
-    <h1>Employee Dashboard</h1>
-    <p>Welcome, <span id="employeeName">-</span></p>
-    <p style="font-size: 14px; opacity: 0.9;">Your daily tasks and schedule</p>
+<div class="dashboard-container" style="position: relative;">
+  <!-- Floating Stickers -->
+  <div class="sticker sticker-blue sticker-float" style="position: fixed; top: 100px; right: 25px; z-index: 100;">TEAM</div>
+  <div class="sticker sticker-green sticker-float" style="position: fixed; top: 200px; left: 20px; z-index: 100; animation-delay: 0.6s;">ACTIVE</div>
+  <div class="sticker sticker-yellow sticker-float" style="position: fixed; bottom: 120px; right: 35px; z-index: 100; animation-delay: 1.1s;">STAFF</div>
+
+  <div class="employee-header animate-on-load" style="position: relative; overflow: hidden;">
+    <!-- Background Image -->
+    <img src="images/IMG_0062.jpeg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15;" alt="">
+    <div style="position: relative; z-index: 1;">
+      <div class="retro-icon" style="background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%); width: 60px; height: 60px; padding: 12px; margin-bottom: 15px;"><img src="images/icons/user.svg" alt="User" style="width: 100%; height: 100%; filter: brightness(0) invert(1);"></div>
+      <h1>Employee Dashboard</h1>
+      <p>Welcome, <span id="employeeName">-</span></p>
+      <p style="font-size: 14px; opacity: 0.9;">Your daily tasks and schedule</p>
+    </div>
   </div>
 
-  <div class="info-grid">
-    <div class="info-card">
+  <div class="info-grid animate-slide-left">
+    <div class="info-card stagger-1">
+      <div class="retro-icon" style="background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%); width: 40px; height: 40px; padding: 8px; margin-bottom: 15px;"><img src="images/icons/document.svg" alt="Info" style="width: 100%; height: 100%; filter: brightness(0) invert(1);"></div>
       <h3>Your Information</h3>
       <p><strong>Department:</strong> <span id="empDepartment">-</span></p>
       <p><strong>Position:</strong> <span id="empPosition">-</span></p>
       <p><strong>Employee ID:</strong> <span id="empId">-</span></p>
     </div>
 
-    <div class="info-card">
+    <div class="info-card stagger-2">
+      <div class="retro-icon" style="background: linear-gradient(135deg, #00b894 0%, #00a085 100%); width: 40px; height: 40px; padding: 8px; margin-bottom: 15px;"><img src="images/icons/chart.svg" alt="Stats" style="width: 100%; height: 100%; filter: brightness(0) invert(1);"></div>
       <h3>Today's Stats</h3>
       <p><strong>Tasks Completed:</strong> <span id="tasksCompleted">0</span></p>
       <p><strong>Active Garages:</strong> <span id="activeGarages">0</span></p>
@@ -68,15 +82,15 @@
     </div>
   </div>
 
-  <div class="card">
-    <h2>Today's Tasks</h2>
+  <div class="card-contained animate-on-load">
+    <h2><span class="retro-icon" style="background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%); width: 35px; height: 35px; padding: 6px; display: inline-flex; vertical-align: middle; margin-right: 10px;"><img src="images/icons/document.svg" alt="Tasks" style="width: 100%; height: 100%; filter: brightness(0) invert(1);"></span>Today's Tasks</h2>
     <div id="tasksContainer">
       <p style="color: #999; text-align: center; padding: 20px;">No tasks assigned</p>
     </div>
   </div>
 
-  <div class="card spacer">
-    <h2>Notifications</h2>
+  <div class="card-contained spacer animate-slide-right">
+    <h2><span class="retro-icon" style="background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%); width: 35px; height: 35px; padding: 6px; display: inline-flex; vertical-align: middle; margin-right: 10px;"><img src="images/icons/notification.svg" alt="Notifications" style="width: 100%; height: 100%; filter: brightness(0) invert(1);"></span>Notifications</h2>
     <div id="notificationsContainer">
       <p style="color: #999; text-align: center; padding: 20px;">No new notifications</p>
     </div>
@@ -169,6 +183,137 @@
 
   // Initialize dashboard
   loadEmployeeInfo();
+
+  // Anime.js Animations for Employee Dashboard
+  document.addEventListener('DOMContentLoaded', function() {
+    // Animate header
+    anime({
+      targets: '.employee-header',
+      translateY: [-30, 0],
+      opacity: [0, 1],
+      duration: 800,
+      easing: 'easeOutExpo'
+    });
+
+    // Animate info cards
+    anime({
+      targets: '.info-card',
+      translateY: [40, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(200, {start: 400}),
+      duration: 600,
+      easing: 'easeOutBack'
+    });
+
+    // Animate task and notification cards
+    anime({
+      targets: '.card-contained',
+      translateY: [50, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(250, {start: 600}),
+      duration: 700,
+      easing: 'easeOutExpo'
+    });
+
+    // Floating stickers animation
+    anime({
+      targets: '.sticker-float',
+      translateY: [-10, 10],
+      rotate: [-5, 5],
+      loop: true,
+      direction: 'alternate',
+      easing: 'easeInOutSine',
+      duration: 2000,
+      delay: anime.stagger(300)
+    });
+
+    // Retro icon pulse
+    anime({
+      targets: '.retro-icon',
+      scale: [1, 1.08, 1],
+      loop: true,
+      duration: 2500,
+      easing: 'easeInOutQuad',
+      delay: anime.stagger(200)
+    });
+
+    // GSAP Animations
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Header Animation
+    gsap.from('.employee-header', {
+      duration: 1,
+      y: -30,
+      opacity: 0,
+      ease: 'power3.out'
+    });
+
+    gsap.from('.employee-header .retro-icon', {
+      duration: 0.8,
+      scale: 0,
+      ease: 'elastic.out(1, 0.5)',
+      delay: 0.3
+    });
+
+    // Stickers Animation
+    gsap.from('.sticker', {
+      duration: 1,
+      scale: 0,
+      rotation: -20,
+      ease: 'elastic.out(1, 0.5)',
+      stagger: 0.2,
+      delay: 0.5
+    });
+
+    // Info Cards Animation
+    gsap.from('.info-card', {
+      duration: 0.7,
+      x: -50,
+      opacity: 0,
+      stagger: 0.15,
+      ease: 'power2.out',
+      delay: 0.3
+    });
+
+    gsap.from('.info-card .retro-icon', {
+      duration: 0.8,
+      scale: 0,
+      ease: 'back.out(1.7)',
+      stagger: 0.15,
+      delay: 0.5
+    });
+
+    // Task Cards Animation
+    gsap.from('.card-contained', {
+      scrollTrigger: {
+        trigger: '.card-contained',
+        start: 'top 90%'
+      },
+      duration: 0.7,
+      y: 40,
+      opacity: 0,
+      stagger: 0.2,
+      ease: 'power2.out'
+    });
+
+    // Button hover effects with GSAP
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('mouseenter', () => {
+        gsap.to(btn, {
+          scale: 1.05,
+          duration: 0.2,
+          ease: 'power2.out'
+        });
+      });
+      btn.addEventListener('mouseleave', () => {
+        gsap.to(btn, {
+          scale: 1,
+          duration: 0.2,
+          ease: 'power2.out'
+        });
+      });
+    });
+  });
 </script>
 </body>
 </html>

@@ -1,0 +1,55 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║                    PARKALOT - Docker Ignore                        ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+# Git
+.git
+.gitignore
+.github
+
+# Docker files (don't include in build context recursively)
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Development files
+*.md
+*.txt
+!requirement.txt
+
+# IDE and editor files
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+tests
+*.test.php
+phpunit.xml
+
+# Logs (mounted as volume)
+logs/*
+!logs/.gitkeep
+
+# Uploads (mounted as volume)
+uploads/*
+!uploads/.gitkeep
+
+# Temporary files
+tmp_*
+*.tmp
+*.bak
+
+# Documentation images (not needed for app)
+Images
+
+# Batch/Shell scripts
+*.bat
+*.ps1
+*.sh

@@ -2,11 +2,16 @@
 /**
  * JobApplicationController - Handles job applications and CV uploads
  */
+
+require_once __DIR__ . '/../services/AzureBlobService.php';
+
 class JobApplicationController {
     private $db;
-    
+    private ?AzureBlobService $azureBlob = null;
+
     public function __construct($db) {
         $this->db = $db;
+        $this->azureBlob = new AzureBlobService();
     }
 
     /**
@@ -79,19 +84,19 @@ class JobApplicationController {
 
     /**
      * Handle CV file upload
+     *
+     * Uploads to Azure Blob Storage if configured, otherwise uses local storage.
      */
     private function handleFileUpload($file) {
-        // Create uploads directory if it doesn't exist
-        $uploadDir = __DIR__ . '/../../uploads/cv/';
-        if (!file_exists($uploadDir)) {
-            mkdir($uploadDir, 0755, true);
-        }
-
         // Validate file type
-        $allowedTypes = ['application/pdf', 'application/msword', 
+        $allowedTypes = ['application/pdf', 'application/msword',
                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-        
-        if (!in_array($file['type'], $allowedTypes)) {
+
+        // Use finfo for more reliable MIME type detection
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($file['tmp_name']);
+
+        if (!in_array($mimeType, $allowedTypes)) {
             return false;
         }
 
@@ -103,10 +108,34 @@ class JobApplicationController {
 
         // Generate unique filename
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filename = 'cv_' . uniqid() . '_' . time() . '.' . $extension;
+        $filename = 'cv_' . uniqid() . '_' . time() . '.' . strtolower($extension);
+
+        // Check if Azure Blob Storage is enabled
+        if ($this->azureBlob && $this->azureBlob->isEnabled()) {
+            // Upload to Azure Blob Storage
+            $result = $this->azureBlob->uploadFile(
+                $file['tmp_name'],
+                $filename,
+                AZURE_CONTAINER_CV_FILES,
+                $mimeType
+            );
+
+            if ($result['success']) {
+                return $result['url'];
+            }
+
+            // Log error but don't fail - fall back to local storage
+            error_log("Azure upload failed for CV: " . ($result['error'] ?? 'Unknown error'));
+        }
+
+        // Fallback to local storage
+        $uploadDir = __DIR__ . '/../../uploads/cv/';
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
         $filePath = $uploadDir . $filename;
 
-        // Move uploaded file
         if (move_uploaded_file($file['tmp_name'], $filePath)) {
             return 'uploads/cv/' . $filename;
         }

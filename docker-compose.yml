@@ -21,7 +21,7 @@ services:
       - "8080:80"
     environment:
       - DB_HOST=db
-      - DB_NAME=parkalots
+      - DB_NAME=parkalotdb
       - DB_USER=parkalot_user
       - DB_PASSWORD=parkalot_secure_password
       - APP_ENV=development
@@ -50,16 +50,14 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root_secure_password
-      MYSQL_DATABASE: parkalots
+      MYSQL_DATABASE: parkalotdb
       MYSQL_USER: parkalot_user
       MYSQL_PASSWORD: parkalot_secure_password
     ports:
-      - "3307:3306"  # Use 3307 on host to avoid conflict with XAMPP MySQL
+      - "3306:3306"  # Standard MySQL port
     volumes:
       - parkalot_db_data:/var/lib/mysql
-      - ./database_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      - ./database_manager_schema.sql:/docker-entrypoint-initdb.d/02-manager-schema.sql
-      - ./database_vehicle_schema.sql:/docker-entrypoint-initdb.d/03-vehicle-schema.sql
+      - ./parkalotdb.sql:/docker-entrypoint-initdb.d/01-parkalotdb.sql
     networks:
       - parkalot_network
     healthcheck:

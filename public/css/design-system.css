@@ -1,0 +1,857 @@
+/**
+ * ParkaLot Design System
+ * Version: 1.0.0
+ *
+ * A comprehensive design system providing consistent styling
+ * across all pages with CSS custom properties, utility classes,
+ * and reusable components.
+ */
+
+/* ========================================
+   CSS CUSTOM PROPERTIES (Variables)
+   ======================================== */
+
+:root {
+  /* Primary Colors - Blue palette */
+  --pl-primary-50: #eff6ff;
+  --pl-primary-100: #dbeafe;
+  --pl-primary-200: #bfdbfe;
+  --pl-primary-300: #93c5fd;
+  --pl-primary-400: #60a5fa;
+  --pl-primary-500: #3b82f6;
+  --pl-primary-600: #2563eb;
+  --pl-primary-700: #1d4ed8;
+  --pl-primary-800: #1e40af;
+  --pl-primary-900: #1e3a8a;
+
+  /* Neutral Colors - Gray palette */
+  --pl-gray-50: #f9fafb;
+  --pl-gray-100: #f3f4f6;
+  --pl-gray-200: #e5e7eb;
+  --pl-gray-300: #d1d5db;
+  --pl-gray-400: #9ca3af;
+  --pl-gray-500: #6b7280;
+  --pl-gray-600: #4b5563;
+  --pl-gray-700: #374151;
+  --pl-gray-800: #1f2937;
+  --pl-gray-900: #111827;
+
+  /* Semantic Colors */
+  --pl-success: #10b981;
+  --pl-success-light: #d1fae5;
+  --pl-warning: #f59e0b;
+  --pl-warning-light: #fef3c7;
+  --pl-error: #ef4444;
+  --pl-error-light: #fee2e2;
+  --pl-info: #3b82f6;
+  --pl-info-light: #dbeafe;
+
+  /* Trustpilot Colors */
+  --pl-trustpilot-green: #00b67a;
+  --pl-trustpilot-dark: #191919;
+  --pl-trustpilot-star: #00b67a;
+  --pl-trustpilot-star-empty: #dcdce6;
+
+  /* Flight Status Colors */
+  --pl-flight-scheduled: #6b7280;
+  --pl-flight-boarding: #f59e0b;
+  --pl-flight-departed: #3b82f6;
+  --pl-flight-in-air: #8b5cf6;
+  --pl-flight-landed: #10b981;
+  --pl-flight-cancelled: #ef4444;
+  --pl-flight-delayed: #f97316;
+
+  /* Typography */
+  --pl-font-sans: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --pl-font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --pl-font-mono: 'SF Mono', Monaco, 'Cascadia Mono', monospace;
+
+  /* Font Sizes */
+  --pl-text-xs: 0.75rem;     /* 12px */
+  --pl-text-sm: 0.875rem;    /* 14px */
+  --pl-text-base: 1rem;      /* 16px */
+  --pl-text-lg: 1.125rem;    /* 18px */
+  --pl-text-xl: 1.25rem;     /* 20px */
+  --pl-text-2xl: 1.5rem;     /* 24px */
+  --pl-text-3xl: 1.875rem;   /* 30px */
+  --pl-text-4xl: 2.25rem;    /* 36px */
+  --pl-text-5xl: 3rem;       /* 48px */
+  --pl-text-6xl: 3.75rem;    /* 60px */
+
+  /* Font Weights */
+  --pl-font-normal: 400;
+  --pl-font-medium: 500;
+  --pl-font-semibold: 600;
+  --pl-font-bold: 700;
+
+  /* Spacing */
+  --pl-space-0: 0;
+  --pl-space-1: 0.25rem;   /* 4px */
+  --pl-space-2: 0.5rem;    /* 8px */
+  --pl-space-3: 0.75rem;   /* 12px */
+  --pl-space-4: 1rem;      /* 16px */
+  --pl-space-5: 1.25rem;   /* 20px */
+  --pl-space-6: 1.5rem;    /* 24px */
+  --pl-space-8: 2rem;      /* 32px */
+  --pl-space-10: 2.5rem;   /* 40px */
+  --pl-space-12: 3rem;     /* 48px */
+  --pl-space-16: 4rem;     /* 64px */
+  --pl-space-20: 5rem;     /* 80px */
+
+  /* Border Radius */
+  --pl-radius-sm: 0.375rem;   /* 6px */
+  --pl-radius-md: 0.5rem;     /* 8px */
+  --pl-radius-lg: 0.75rem;    /* 12px */
+  --pl-radius-xl: 1rem;       /* 16px */
+  --pl-radius-2xl: 1.25rem;   /* 20px */
+  --pl-radius-3xl: 1.5rem;    /* 24px */
+  --pl-radius-full: 9999px;
+
+  /* Shadows */
+  --pl-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --pl-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --pl-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --pl-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --pl-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --pl-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --pl-shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+  /* Transitions */
+  --pl-transition-fast: 150ms ease;
+  --pl-transition-normal: 300ms ease;
+  --pl-transition-slow: 500ms ease;
+
+  /* Z-Index Scale */
+  --pl-z-dropdown: 100;
+  --pl-z-sticky: 200;
+  --pl-z-modal: 500;
+  --pl-z-tooltip: 600;
+  --pl-z-toast: 700;
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* ========================================
+   CARD COMPONENTS
+   ======================================== */
+
+.pl-card {
+  background: white;
+  border-radius: var(--pl-radius-xl);
+  box-shadow: var(--pl-shadow-md);
+  padding: var(--pl-space-6);
+  transition: transform var(--pl-transition-normal), box-shadow var(--pl-transition-normal);
+}
+
+.pl-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--pl-shadow-lg);
+}
+
+.pl-card--flat {
+  box-shadow: none;
+  border: 1px solid var(--pl-gray-200);
+}
+
+.pl-card--flat:hover {
+  transform: none;
+  border-color: var(--pl-primary-300);
+}
+
+.pl-card--elevated {
+  box-shadow: var(--pl-shadow-xl);
+}
+
+.pl-card--bordered {
+  border: 2px solid var(--pl-gray-200);
+  box-shadow: none;
+}
+
+.pl-card--glass {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.pl-card__header {
+  margin-bottom: var(--pl-space-4);
+  padding-bottom: var(--pl-space-4);
+  border-bottom: 1px solid var(--pl-gray-100);
+}
+
+.pl-card__title {
+  font-family: var(--pl-font-heading);
+  font-size: var(--pl-text-xl);
+  font-weight: var(--pl-font-semibold);
+  color: var(--pl-gray-900);
+  margin: 0;
+}
+
+.pl-card__subtitle {
+  font-size: var(--pl-text-sm);
+  color: var(--pl-gray-500);
+  margin-top: var(--pl-space-1);
+}
+
+.pl-card__body {
+  color: var(--pl-gray-700);
+}
+
+.pl-card__footer {
+  margin-top: var(--pl-space-4);
+  padding-top: var(--pl-space-4);
+  border-top: 1px solid var(--pl-gray-100);
+}
+
+/* ========================================
+   BUTTON SYSTEM
+   ======================================== */
+
+.pl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pl-space-2);
+  padding: 12px 24px;
+  border-radius: var(--pl-radius-md);
+  font-family: var(--pl-font-sans);
+  font-weight: var(--pl-font-semibold);
+  font-size: var(--pl-text-base);
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+  transition: all var(--pl-transition-normal);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pl-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--pl-primary-200);
+}
+
+.pl-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Primary Button */
+.pl-btn--primary {
+  background: var(--pl-primary-600);
+  color: white;
+}
+
+.pl-btn--primary:hover:not(:disabled) {
+  background: var(--pl-primary-700);
+  transform: translateY(-2px);
+  box-shadow: var(--pl-shadow-md);
+}
+
+/* Secondary Button */
+.pl-btn--secondary {
+  background: var(--pl-gray-100);
+  color: var(--pl-gray-700);
+}
+
+.pl-btn--secondary:hover:not(:disabled) {
+  background: var(--pl-gray-200);
+}
+
+/* Outline Button */
+.pl-btn--outline {
+  background: transparent;
+  color: var(--pl-primary-600);
+  border: 2px solid var(--pl-primary-600);
+}
+
+.pl-btn--outline:hover:not(:disabled) {
+  background: var(--pl-primary-50);
+}
+
+/* Ghost Button */
+.pl-btn--ghost {
+  background: transparent;
+  color: var(--pl-gray-600);
+}
+
+.pl-btn--ghost:hover:not(:disabled) {
+  background: var(--pl-gray-100);
+}
+
+/* Success Button */
+.pl-btn--success {
+  background: var(--pl-success);
+  color: white;
+}
+
+.pl-btn--success:hover:not(:disabled) {
+  background: #059669;
+}
+
+/* Danger Button */
+.pl-btn--danger {
+  background: var(--pl-error);
+  color: white;
+}
+
+.pl-btn--danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+/* Button Sizes */
+.pl-btn--sm {
+  padding: 8px 16px;
+  font-size: var(--pl-text-sm);
+}
+
+.pl-btn--lg {
+  padding: 16px 32px;
+  font-size: var(--pl-text-lg);
+}
+
+.pl-btn--xl {
+  padding: 20px 40px;
+  font-size: var(--pl-text-xl);
+}
+
+/* Icon Button */
+.pl-btn--icon {
+  padding: 12px;
+  border-radius: var(--pl-radius-full);
+}
+
+/* Full Width Button */
+.pl-btn--full {
+  width: 100%;
+}
+
+/* ========================================
+   TRUSTPILOT WIDGET STYLES
+   ======================================== */
+
+.pl-trustpilot {
+  background: var(--pl-gray-50);
+  border-radius: var(--pl-radius-xl);
+  padding: var(--pl-space-6);
+}
+
+.pl-trustpilot__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--pl-space-4);
+}
+
+.pl-trustpilot__logo {
+  display: flex;
+  align-items: center;
+  gap: var(--pl-space-2);
+}
+
+.pl-trustpilot__logo-text {
+  font-family: var(--pl-font-heading);
+  font-weight: var(--pl-font-bold);
+  font-size: var(--pl-text-lg);
+  color: var(--pl-trustpilot-dark);
+}
+
+.pl-trustpilot__score {
+  display: flex;
+  align-items: center;
+  gap: var(--pl-space-3);
+}
+
+.pl-trustpilot__rating {
+  font-size: var(--pl-text-2xl);
+  font-weight: var(--pl-font-bold);
+  color: var(--pl-trustpilot-green);
+}
+
+.pl-trustpilot__stars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.pl-trustpilot__star {
+  width: 20px;
+  height: 20px;
+  color: var(--pl-trustpilot-star);
+}
+
+.pl-trustpilot__star--empty {
+  color: var(--pl-trustpilot-star-empty);
+}
+
+.pl-trustpilot__count {
+  font-size: var(--pl-text-sm);
+  color: var(--pl-gray-500);
+}
+
+.pl-trustpilot__reviews {
+  display: grid;
+  gap: var(--pl-space-4);
+}
+
+.pl-trustpilot__review {
+  background: white;
+  border-radius: var(--pl-radius-lg);
+  padding: var(--pl-space-4);
+  box-shadow: var(--pl-shadow-xs);
+}
+
+.pl-trustpilot__review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--pl-space-2);
+}
+
+.pl-trustpilot__reviewer {
+  font-weight: var(--pl-font-semibold);
+  color: var(--pl-gray-900);
+}
+
+.pl-trustpilot__date {
+  font-size: var(--pl-text-xs);
+  color: var(--pl-gray-400);
+}
+
+.pl-trustpilot__review-title {
+  font-weight: var(--pl-font-semibold);
+  color: var(--pl-gray-800);
+  margin-bottom: var(--pl-space-1);
+}
+
+.pl-trustpilot__review-text {
+  font-size: var(--pl-text-sm);
+  color: var(--pl-gray-600);
+  line-height: 1.6;
+}
+
+.pl-trustpilot__verified {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pl-space-1);
+  font-size: var(--pl-text-xs);
+  color: var(--pl-trustpilot-green);
+  margin-top: var(--pl-space-2);
+}
+
+/* Carousel variant */
+.pl-trustpilot--carousel {
+  overflow: hidden;
+}
+
+.pl-trustpilot__carousel-track {
+  display: flex;
+  gap: var(--pl-space-4);
+  transition: transform var(--pl-transition-slow);
+}
+
+.pl-trustpilot__carousel-track .pl-trustpilot__review {
+  min-width: 300px;
+  flex-shrink: 0;
+}
+
+/* ========================================
+   FLIGHT TRACKER STYLES
+   ======================================== */
+
+.pl-flight-tracker {
+  background: white;
+  border-radius: var(--pl-radius-xl);
+  box-shadow: var(--pl-shadow-md);
+  overflow: hidden;
+}
+
+.pl-flight-tracker__header {
+  background: linear-gradient(135deg, var(--pl-primary-600) 0%, var(--pl-primary-800) 100%);
+  padding: var(--pl-space-4) var(--pl-space-6);
+  color: white;
+}
+
+.pl-flight-tracker__title {
+  font-family: var(--pl-font-heading);
+  font-size: var(--pl-text-lg);
+  font-weight: var(--pl-font-semibold);
+  margin: 0;
+}
+
+.pl-flight-tracker__search {
+  display: flex;
+  gap: var(--pl-space-3);
+  padding: var(--pl-space-4) var(--pl-space-6);
+  background: var(--pl-gray-50);
+}
+
+.pl-flight-tracker__search input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid var(--pl-gray-200);
+  border-radius: var(--pl-radius-md);
+  font-size: var(--pl-text-base);
+  transition: border-color var(--pl-transition-fast);
+}
+
+.pl-flight-tracker__search input:focus {
+  outline: none;
+  border-color: var(--pl-primary-500);
+}
+
+.pl-flight-card {
+  padding: var(--pl-space-4) var(--pl-space-6);
+  border-bottom: 1px solid var(--pl-gray-100);
+  transition: background var(--pl-transition-fast);
+}
+
+.pl-flight-card:hover {
+  background: var(--pl-gray-50);
+}
+
+.pl-flight-card:last-child {
+  border-bottom: none;
+}
+
+.pl-flight-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--pl-space-3);
+}
+
+.pl-flight-card__number {
+  display: flex;
+  align-items: center;
+  gap: var(--pl-space-2);
+}
+
+.pl-flight-card__airline-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--pl-radius-sm);
+  object-fit: contain;
+}
+
+.pl-flight-card__code {
+  font-family: var(--pl-font-heading);
+  font-size: var(--pl-text-lg);
+  font-weight: var(--pl-font-bold);
+  color: var(--pl-gray-900);
+}
+
+.pl-flight-card__airline {
+  font-size: var(--pl-text-sm);
+  color: var(--pl-gray-500);
+}
+
+.pl-flight-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pl-space-1);
+  padding: 4px 12px;
+  border-radius: var(--pl-radius-full);
+  font-size: var(--pl-text-xs);
+  font-weight: var(--pl-font-semibold);
+  text-transform: uppercase;
+}
+
+.pl-flight-card__status--scheduled {
+  background: var(--pl-gray-100);
+  color: var(--pl-gray-600);
+}
+
+.pl-flight-card__status--boarding {
+  background: var(--pl-warning-light);
+  color: var(--pl-warning);
+}
+
+.pl-flight-card__status--departed {
+  background: var(--pl-info-light);
+  color: var(--pl-info);
+}
+
+.pl-flight-card__status--in-air {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.pl-flight-card__status--landed,
+.pl-flight-card__status--arrived {
+  background: var(--pl-success-light);
+  color: var(--pl-success);
+}
+
+.pl-flight-card__status--cancelled {
+  background: var(--pl-error-light);
+  color: var(--pl-error);
+}
+
+.pl-flight-card__status--delayed {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.pl-flight-card__route {
+  display: flex;
+  align-items: center;
+  gap: var(--pl-space-4);
+}
+
+.pl-flight-card__airport {
+  text-align: center;
+}
+
+.pl-flight-card__airport-code {
+  font-family: var(--pl-font-heading);
+  font-size: var(--pl-text-xl);
+  font-weight: var(--pl-font-bold);
+  color: var(--pl-gray-900);
+}
+
+.pl-flight-card__airport-name {
+  font-size: var(--pl-text-xs);
+  color: var(--pl-gray-500);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl-flight-card__time {
+  font-size: var(--pl-text-sm);
+  color: var(--pl-gray-600);
+  margin-top: var(--pl-space-1);
+}
+
+.pl-flight-card__arrow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pl-gray-400);
+}
+
+.pl-flight-card__arrow svg {
+  width: 24px;
+  height: 24px;
+}
+
+.pl-flight-card__details {
+  display: flex;
+  gap: var(--pl-space-4);
+  margin-top: var(--pl-space-3);
+  padding-top: var(--pl-space-3);
+  border-top: 1px dashed var(--pl-gray-200);
+}
+
+.pl-flight-card__detail {
+  font-size: var(--pl-text-sm);
+}
+
+.pl-flight-card__detail-label {
+  color: var(--pl-gray-400);
+  margin-right: var(--pl-space-1);
+}
+
+.pl-flight-card__detail-value {
+  color: var(--pl-gray-700);
+  font-weight: var(--pl-font-medium);
+}
+
+/* ========================================
+   BADGE COMPONENTS
+   ======================================== */
+
+.pl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pl-space-1);
+  padding: 4px 10px;
+  border-radius: var(--pl-radius-full);
+  font-size: var(--pl-text-xs);
+  font-weight: var(--pl-font-semibold);
+}
+
+.pl-badge--primary {
+  background: var(--pl-primary-100);
+  color: var(--pl-primary-700);
+}
+
+.pl-badge--success {
+  background: var(--pl-success-light);
+  color: var(--pl-success);
+}
+
+.pl-badge--warning {
+  background: var(--pl-warning-light);
+  color: var(--pl-warning);
+}
+
+.pl-badge--error {
+  background: var(--pl-error-light);
+  color: var(--pl-error);
+}
+
+.pl-badge--gray {
+  background: var(--pl-gray-100);
+  color: var(--pl-gray-600);
+}
+
+/* ========================================
+   LOADING STATES
+   ======================================== */
+
+.pl-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--pl-gray-200) 25%,
+    var(--pl-gray-100) 50%,
+    var(--pl-gray-200) 75%
+  );
+  background-size: 200% 100%;
+  animation: pl-skeleton-shimmer 1.5s infinite;
+  border-radius: var(--pl-radius-sm);
+}
+
+@keyframes pl-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.pl-skeleton--text {
+  height: 1em;
+  margin: var(--pl-space-1) 0;
+}
+
+.pl-skeleton--avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--pl-radius-full);
+}
+
+.pl-skeleton--card {
+  height: 200px;
+  border-radius: var(--pl-radius-xl);
+}
+
+.pl-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--pl-gray-200);
+  border-top-color: var(--pl-primary-600);
+  border-radius: 50%;
+  animation: pl-spin 0.8s linear infinite;
+}
+
+.pl-spinner--sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.pl-spinner--lg {
+  width: 40px;
+  height: 40px;
+  border-width: 4px;
+}
+
+@keyframes pl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pl-pulse {
+  animation: pl-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pl-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+/* Text alignment */
+.pl-text-left { text-align: left; }
+.pl-text-center { text-align: center; }
+.pl-text-right { text-align: right; }
+
+/* Flexbox */
+.pl-flex { display: flex; }
+.pl-inline-flex { display: inline-flex; }
+.pl-flex-col { flex-direction: column; }
+.pl-flex-wrap { flex-wrap: wrap; }
+.pl-items-center { align-items: center; }
+.pl-items-start { align-items: flex-start; }
+.pl-items-end { align-items: flex-end; }
+.pl-justify-center { justify-content: center; }
+.pl-justify-between { justify-content: space-between; }
+.pl-justify-end { justify-content: flex-end; }
+.pl-gap-1 { gap: var(--pl-space-1); }
+.pl-gap-2 { gap: var(--pl-space-2); }
+.pl-gap-3 { gap: var(--pl-space-3); }
+.pl-gap-4 { gap: var(--pl-space-4); }
+.pl-gap-6 { gap: var(--pl-space-6); }
+.pl-gap-8 { gap: var(--pl-space-8); }
+
+/* Grid */
+.pl-grid { display: grid; }
+.pl-grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.pl-grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.pl-grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Spacing */
+.pl-p-0 { padding: 0; }
+.pl-p-2 { padding: var(--pl-space-2); }
+.pl-p-4 { padding: var(--pl-space-4); }
+.pl-p-6 { padding: var(--pl-space-6); }
+.pl-p-8 { padding: var(--pl-space-8); }
+.pl-m-0 { margin: 0; }
+.pl-m-auto { margin: auto; }
+.pl-mt-4 { margin-top: var(--pl-space-4); }
+.pl-mb-4 { margin-bottom: var(--pl-space-4); }
+.pl-my-4 { margin-top: var(--pl-space-4); margin-bottom: var(--pl-space-4); }
+
+/* Width */
+.pl-w-full { width: 100%; }
+.pl-max-w-sm { max-width: 24rem; }
+.pl-max-w-md { max-width: 28rem; }
+.pl-max-w-lg { max-width: 32rem; }
+.pl-max-w-xl { max-width: 36rem; }
+.pl-max-w-2xl { max-width: 42rem; }
+
+/* Visibility */
+.pl-hidden { display: none; }
+.pl-invisible { visibility: hidden; }
+.pl-overflow-hidden { overflow: hidden; }
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .pl-md\:hidden { display: none; }
+  .pl-grid-cols-2, .pl-grid-cols-3, .pl-grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .pl-sm\:hidden { display: none; }
+}

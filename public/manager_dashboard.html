@@ -6,6 +6,10 @@
   <title>Manager Dashboard - ParkaLot</title>
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Billboard.js for charts -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/billboard.js/dist/billboard.min.css">
+  <!-- Anime.js for animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
   <style>
     .dashboard-grid {
       display: grid;
@@ -65,7 +69,10 @@
     .badge-terminated { background: #c0392b; color: white; }
     .badge-pending { background: #f39c12; color: white; }
     .badge-approved { background: #27ae60; color: white; }
+    .badge-accepted { background: #27ae60; color: white; }
     .badge-rejected { background: #e74c3c; color: white; }
+    .badge-reviewing { background: #3498db; color: white; }
+    .badge-interviewed { background: #9b59b6; color: white; }
     .chart-container {
       position: relative;
       height: 300px;
@@ -222,12 +229,21 @@
 </head>
 <body>
 
-<div class="container">
+<div class="dashboard-container" style="position: relative;">
+  <!-- Floating Stickers -->
+  <div class="sticker sticker-pink sticker-float" style="position: fixed; top: 90px; right: 25px; z-index: 100;">ADMIN</div>
+  <div class="sticker sticker-yellow sticker-float" style="position: fixed; top: 180px; left: 20px; z-index: 100; animation-delay: 0.6s;">MANAGER</div>
+  <div class="sticker sticker-green sticker-float" style="position: fixed; bottom: 130px; right: 35px; z-index: 100; animation-delay: 1.1s;">CONTROL</div>
 
-  <div class="manager-header">
-    <h1>Manager Dashboard</h1>
-    <p>Welcome back, <span id="managerName">-</span></p>
-    <p style="font-size: 14px; opacity: 0.9;">Full system control and analytics</p>
+  <div class="manager-header animate-on-load" style="position: relative; overflow: hidden;">
+    <!-- Background Image -->
+    <img src="images/IMG_0074.jpeg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15;" alt="">
+    <div style="position: relative; z-index: 1;">
+      <div class="retro-icon" style="background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%); width: 60px; height: 60px; font-size: 28px; margin-bottom: 15px;">👔</div>
+      <h1>Manager Dashboard</h1>
+      <p>Welcome back, <span id="managerName">-</span></p>
+      <p style="font-size: 14px; opacity: 0.9;">Full system control and analytics</p>
+    </div>
   </div>
 
   <div class="tabs">
@@ -869,6 +885,11 @@
         data.applications.forEach(app => {
           const div = document.createElement("div");
           div.className = "application-card";
+          // Format the applied date - use applied_at from database
+          const appliedDate = app.applied_at ? new Date(app.applied_at).toLocaleDateString() : 'Unknown';
+          // Map status for badge styling
+          const badgeStatus = app.status === 'accepted' ? 'approved' : (app.status || 'pending');
+          const displayStatus = app.status === 'accepted' ? 'Accepted' : (app.status || 'pending');
           div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: start;">
               <div>
@@ -876,16 +897,15 @@
                 <p><strong>Email:</strong> ${app.email}</p>
                 <p><strong>Phone:</strong> ${app.phone || '-'}</p>
                 <p><strong>Position:</strong> ${app.position_applied || '-'}</p>
-                <p><strong>Experience:</strong> ${app.experience_years || 0} years</p>
-                <p><strong>Applied:</strong> ${new Date(app.created_at).toLocaleDateString()}</p>
+                <p><strong>Applied:</strong> ${appliedDate}</p>
               </div>
               <div>
-                <span class="badge badge-${app.status || 'pending'}">${app.status || 'pending'}</span>
+                <span class="badge badge-${badgeStatus}">${displayStatus}</span>
               </div>
             </div>
             ${app.status === 'pending' ? `
             <div style="margin-top: 15px; display: flex; gap: 10px;">
-              <button class="btn success btn-sm" onclick="updateApplicationStatus(${app.application_id}, 'approved')">Approve</button>
+              <button class="btn success btn-sm" onclick="updateApplicationStatus(${app.application_id}, 'accepted')">Accept</button>
               <button class="btn danger btn-sm" onclick="updateApplicationStatus(${app.application_id}, 'rejected')">Reject</button>
             </div>
             ` : ''}
@@ -897,25 +917,93 @@
       }
     } catch (e) {
       console.error("Failed to load applications:", e);
+      container.innerHTML = "<p style='text-align: center; color: #e74c3c; padding: 20px;'>Error loading applications</p>";
     }
   }
 
   async function loadAnalytics() {
     chartsInitialized = true;
+    console.log("Loading analytics data...");
 
     try {
       const res = await fetch(API + "?route=manager/analytics", { credentials: "same-origin" });
-      const data = await res.json();
+
+      // Check if response is OK
+      if (!res.ok) {
+        console.error("Analytics API HTTP error:", res.status, res.statusText);
+        initEmptyCharts();
+        return;
+      }
+
+      const responseText = await res.text();
+      console.log("Analytics raw response:", responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse analytics JSON:", parseError);
+        console.error("Response was:", responseText);
+        initEmptyCharts();
+        return;
+      }
+
+      console.log("Analytics parsed data:", data);
+
+      // Check if API returned successfully
+      if (!data.success) {
+        console.error("Analytics API error:", data.error);
+        initEmptyCharts();
+        return;
+      }
+
+      // Parse and validate numeric data with logging
+      const revenueLabels = Array.isArray(data.revenue_labels) && data.revenue_labels.length > 0
+        ? data.revenue_labels
+        : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+      const revenueValues = Array.isArray(data.revenue_data)
+        ? data.revenue_data.map(v => parseFloat(v) || 0)
+        : [0, 0, 0, 0, 0, 0];
+      console.log("Revenue:", revenueLabels, revenueValues);
+
+      const reservationStatus = Array.isArray(data.reservation_status)
+        ? data.reservation_status.map(v => parseInt(v) || 0)
+        : [0, 0, 0];
+      console.log("Reservations:", reservationStatus);
+
+      const vehicleLabels = Array.isArray(data.vehicle_labels) && data.vehicle_labels.length > 0
+        ? data.vehicle_labels
+        : ['Routine', 'Entry', 'Exit', 'Damage', 'Random'];
+      const vehicleValues = Array.isArray(data.vehicle_data)
+        ? data.vehicle_data.map(v => parseInt(v) || 0)
+        : [0, 0, 0, 0, 0];
+      console.log("Vehicles:", vehicleLabels, vehicleValues);
+
+      const deptLabels = Array.isArray(data.department_labels) && data.department_labels.length > 0
+        ? data.department_labels
+        : ['Management', 'Operations', 'Customer Service', 'Software Systems'];
+      const deptValues = Array.isArray(data.department_data)
+        ? data.department_data.map(v => parseInt(v) || 0)
+        : [0, 0, 0, 0];
+      console.log("Departments:", deptLabels, deptValues);
+
+      const reportLabels = Array.isArray(data.report_labels) && data.report_labels.length > 0
+        ? data.report_labels
+        : ['Daily', 'Weekly', 'Monthly'];
+      const reportValues = Array.isArray(data.report_data)
+        ? data.report_data.map(v => parseInt(v) || 0)
+        : [0, 0, 0];
+      console.log("Reports:", reportLabels, reportValues);
 
       // Revenue Chart
       const revenueCtx = document.getElementById('revenueChart').getContext('2d');
       new Chart(revenueCtx, {
         type: 'line',
         data: {
-          labels: data.revenue_labels || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          labels: revenueLabels,
           datasets: [{
             label: 'Revenue (£)',
-            data: data.revenue_data || [0, 0, 0, 0, 0, 0],
+            data: revenueValues,
             borderColor: '#3498db',
             backgroundColor: 'rgba(52, 152, 219, 0.1)',
             tension: 0.4,
@@ -935,7 +1023,7 @@
         data: {
           labels: ['Active', 'Completed', 'Cancelled'],
           datasets: [{
-            data: data.reservation_status || [0, 0, 0],
+            data: reservationStatus,
             backgroundColor: ['#3498db', '#27ae60', '#e74c3c']
           }]
         },
@@ -950,10 +1038,10 @@
       new Chart(vehicleCtx, {
         type: 'bar',
         data: {
-          labels: data.vehicle_labels || ['Routine', 'Entry', 'Exit', 'Damage', 'Random'],
+          labels: vehicleLabels,
           datasets: [{
             label: 'Inspections',
-            data: data.vehicle_data || [0, 0, 0, 0, 0],
+            data: vehicleValues,
             backgroundColor: '#9b59b6'
           }]
         },
@@ -969,9 +1057,9 @@
       new Chart(deptCtx, {
         type: 'pie',
         data: {
-          labels: data.department_labels || ['Management', 'Operations', 'Customer Service', 'Software Systems'],
+          labels: deptLabels,
           datasets: [{
-            data: data.department_data || [0, 0, 0, 0],
+            data: deptValues,
             backgroundColor: ['#e74c3c', '#f39c12', '#27ae60', '#3498db']
           }]
         },
@@ -986,10 +1074,10 @@
       new Chart(reportsCtx, {
         type: 'bar',
         data: {
-          labels: data.report_labels || ['Daily', 'Weekly', 'Monthly'],
+          labels: reportLabels,
           datasets: [{
             label: 'Reports Generated',
-            data: data.report_data || [0, 0, 0],
+            data: reportValues,
             backgroundColor: ['#1abc9c', '#e67e22', '#9b59b6']
           }]
         },
@@ -1293,22 +1381,38 @@
   }
 
   async function updateApplicationStatus(applicationId, status) {
+    if (!applicationId) {
+      alert("Error: Invalid application ID");
+      return;
+    }
+
+    const statusDisplay = status === 'accepted' ? 'Accepted' : status.charAt(0).toUpperCase() + status.slice(1);
+
     try {
       const res = await fetch(API + "?route=job_applications/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ application_id: applicationId, status: status })
+        body: JSON.stringify({ application_id: parseInt(applicationId), status: status })
       });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Server error:", res.status, errorText);
+        alert(`Server error (${res.status}): Failed to update application`);
+        return;
+      }
+
       const data = await res.json();
 
       if (data.success) {
-        alert(`Application ${status} successfully!`);
+        alert(`Application ${statusDisplay} successfully!`);
         loadJobApplications();
       } else {
         alert(data.error || "Failed to update application");
       }
     } catch (e) {
+      console.error("Update application error:", e);
       alert("Error updating application: " + e.message);
     }
   }
@@ -1324,6 +1428,109 @@
 
   // Initialize
   loadOverviewStats();
+
+  // Anime.js Animations for Manager Dashboard
+  document.addEventListener('DOMContentLoaded', function() {
+    // Animate header
+    anime({
+      targets: '.manager-header',
+      translateY: [-30, 0],
+      opacity: [0, 1],
+      duration: 800,
+      easing: 'easeOutExpo'
+    });
+
+    // Animate tabs
+    anime({
+      targets: '.tab',
+      translateY: [20, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(80, {start: 300}),
+      duration: 500,
+      easing: 'easeOutBack'
+    });
+
+    // Animate dashboard cards
+    anime({
+      targets: '.dashboard-card, .card-contained',
+      translateY: [40, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(100, {start: 500}),
+      duration: 600,
+      easing: 'easeOutExpo'
+    });
+
+    // Floating stickers animation
+    anime({
+      targets: '.sticker-float',
+      translateY: [-12, 12],
+      rotate: [-6, 6],
+      loop: true,
+      direction: 'alternate',
+      easing: 'easeInOutSine',
+      duration: 2200,
+      delay: anime.stagger(350)
+    });
+
+    // Stat counter animation
+    setTimeout(() => {
+      document.querySelectorAll('.stat-big').forEach(el => {
+        const text = el.textContent.replace(/[^0-9]/g, '');
+        const value = parseInt(text) || 0;
+        if (value > 0) {
+          anime({
+            targets: el,
+            innerHTML: [0, value],
+            round: 1,
+            duration: 1500,
+            easing: 'easeOutExpo'
+          });
+        }
+      });
+    }, 800);
+
+    // Tab hover effects
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('mouseenter', () => {
+        if (!tab.classList.contains('active')) {
+          anime({
+            targets: tab,
+            scale: 1.05,
+            duration: 200,
+            easing: 'easeOutQuad'
+          });
+        }
+      });
+      tab.addEventListener('mouseleave', () => {
+        anime({
+          targets: tab,
+          scale: 1,
+          duration: 200,
+          easing: 'easeOutQuad'
+        });
+      });
+    });
+
+    // Button hover effects
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('mouseenter', () => {
+        anime({
+          targets: btn,
+          scale: 1.05,
+          duration: 200,
+          easing: 'easeOutQuad'
+        });
+      });
+      btn.addEventListener('mouseleave', () => {
+        anime({
+          targets: btn,
+          scale: 1,
+          duration: 200,
+          easing: 'easeOutQuad'
+        });
+      });
+    });
+  });
 </script>
 </body>
 </html>

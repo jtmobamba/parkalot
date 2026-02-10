@@ -88,7 +88,7 @@ if (loginForm) {
     }
 
     try {
-      const res = await fetch("../api/index.php?route=login", {
+      const res = await fetch("/api/index.php?route=login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -194,7 +194,7 @@ if (registerForm) {
     }
 
     try {
-      const res = await fetch("../api/index.php?route=register", {
+      const res = await fetch("/api/index.php?route=register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
@@ -258,7 +258,7 @@ async function sendOTP() {
   try {
     showMessage(verificationMsg, "Sending verification code...", "info");
     
-    const res = await fetch("../api/index.php?route=verify_email/send", {
+    const res = await fetch("/api/index.php?route=verify_email/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -302,7 +302,7 @@ async function verifyOTP() {
   }
 
   try {
-    const res = await fetch("../api/index.php?route=verify_email/confirm", {
+    const res = await fetch("/api/index.php?route=verify_email/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -375,7 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 async function logout() {
   try {
-    await fetch("../api/index.php?route=logout", { credentials: "include" });
+    await fetch("/api/index.php?route=logout", { credentials: "include" });
     window.location.href = "index.html";
   } catch (err) {
     console.error("Logout failed:", err);

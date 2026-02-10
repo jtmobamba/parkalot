@@ -3,229 +3,687 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ParkaLot - Smart Parking Solutions</title>
-  <link rel="stylesheet" href="css/style.css">
+  <title>ParkaLot - The Smarter Way to Park</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      color: #333;
+      line-height: 1.6;
+    }
+
     /* Navigation */
     .navbar {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: white;
       padding: 15px 5%;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
       position: sticky;
       top: 0;
       z-index: 1000;
     }
-    
+
     .navbar-brand {
-      color: white;
-      font-size: 28px;
-      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       text-decoration: none;
     }
-    
+
+    .navbar-brand img {
+      height: 40px;
+    }
+
+    .navbar-brand span {
+      font-family: 'Poppins', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: #2563eb;
+    }
+
     .navbar-menu {
       display: flex;
       gap: 30px;
       list-style: none;
+      align-items: center;
     }
-    
+
     .navbar-menu a {
-      color: white;
+      color: #333;
       text-decoration: none;
-      font-weight: 500;
-      transition: opacity 0.3s;
+      font-weight: 600;
+      font-size: 15px;
+      transition: color 0.3s;
     }
-    
+
     .navbar-menu a:hover {
-      opacity: 0.8;
+      color: #2563eb;
     }
-    
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 15px;
+      border: none;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #2563eb;
+      border: 2px solid #2563eb;
+    }
+
+    .btn-outline:hover {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-white {
+      background: white;
+      color: #2563eb;
+    }
+
+    .btn-white:hover {
+      background: #f0f7ff;
+    }
+
     /* Hero Section */
     .hero {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 100px 5%;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+      padding: 80px 5% 100px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('images/IMG_0073.jpeg') center/cover;
+      opacity: 0.1;
+    }
+
+    .hero-content {
+      max-width: 800px;
+      margin: 0 auto;
       text-align: center;
+      position: relative;
+      z-index: 1;
     }
-    
+
     .hero h1 {
-      font-size: 56px;
-      margin-bottom: 20px;
-    }
-    
-    .hero p {
-      font-size: 22px;
-      margin-bottom: 40px;
-      opacity: 0.95;
-    }
-    
-    .hero-buttons {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-    }
-    
-    .btn-hero {
-      padding: 15px 40px;
-      font-size: 18px;
-      border: none;
-      border-radius: 30px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-    
-    .btn-hero.primary {
-      background: white;
-      color: #667eea;
-    }
-    
-    .btn-hero.secondary {
-      background: transparent;
+      font-family: 'Poppins', sans-serif;
+      font-size: 52px;
+      font-weight: 700;
       color: white;
-      border: 2px solid white;
+      margin-bottom: 20px;
+      line-height: 1.2;
     }
-    
-    .btn-hero:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+
+    .hero p {
+      font-size: 20px;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 40px;
     }
-    
-    /* Features Section */
-    .section {
-      padding: 80px 5%;
-      max-width: 1200px;
+
+    /* Search Box */
+    .search-box {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      max-width: 900px;
       margin: 0 auto;
     }
-    
-    .section h2 {
-      text-align: center;
-      font-size: 42px;
-      margin-bottom: 50px;
-      color: #2c3e50;
+
+    .search-tabs {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 25px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 15px;
     }
-    
-    .features-grid {
+
+    .search-tab {
+      background: none;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      color: #6b7280;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
+
+    .search-tab.active {
+      color: #2563eb;
+      background: #eff6ff;
+    }
+
+    .search-form {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 15px;
+      align-items: end;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-group label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .form-group input,
+    .form-group select {
+      padding: 14px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+
+    .search-btn {
+      padding: 14px 32px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s;
+      height: fit-content;
+    }
+
+    .search-btn:hover {
+      background: #1d4ed8;
+    }
+
+    /* Value Props */
+    .value-props {
+      padding: 80px 5%;
+      background: #f9fafb;
+    }
+
+    .value-props-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+    }
+
+    .value-card {
+      text-align: center;
+      padding: 30px;
+    }
+
+    .value-icon {
+      width: 80px;
+      height: 80px;
+      background: #eff6ff;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 36px;
+      padding: 16px;
+    }
+
+    .value-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: brightness(0) saturate(100%) invert(32%) sepia(98%) saturate(1752%) hue-rotate(215deg) brightness(95%) contrast(92%);
+    }
+
+    .location-img img {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+
+    .rent-image img, .app-mockup img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .value-card h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #1f2937;
+    }
+
+    .value-card p {
+      color: #6b7280;
+      font-size: 16px;
+    }
+
+    /* How It Works */
+    .how-it-works {
+      padding: 80px 5%;
+      background: white;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .section-header h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 40px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 15px;
+    }
+
+    .section-header p {
+      font-size: 18px;
+      color: #6b7280;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .steps-grid {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
       gap: 30px;
     }
-    
-    .feature-card {
-      background: white;
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+
+    .step-card {
       text-align: center;
-      transition: transform 0.3s;
+      position: relative;
     }
-    
-    .feature-card:hover {
-      transform: translateY(-10px);
+
+    .step-number {
+      width: 50px;
+      height: 50px;
+      background: #2563eb;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 auto 20px;
     }
-    
-    .feature-icon {
-      font-size: 60px;
-      margin-bottom: 20px;
+
+    .step-card h4 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #1f2937;
     }
-    
-    .feature-card h3 {
-      font-size: 24px;
-      margin-bottom: 15px;
-      color: #2c3e50;
+
+    .step-card p {
+      font-size: 14px;
+      color: #6b7280;
     }
-    
-    .feature-card p {
-      color: #666;
-      line-height: 1.6;
+
+    /* Top Locations */
+    .top-locations {
+      padding: 80px 5%;
+      background: #f9fafb;
     }
-    
-    /* Gallery Section */
-    .gallery {
+
+    .locations-grid {
+      max-width: 1200px;
+      margin: 0 auto;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 20px;
-      margin-top: 40px;
     }
-    
-    .gallery-item {
-      background: #ecf0f1;
-      height: 250px;
-      border-radius: 15px;
+
+    .location-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .location-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+
+    .location-img {
+      height: 150px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 48px;
-      transition: transform 0.3s;
     }
-    
-    .gallery-item:hover {
-      transform: scale(1.05);
+
+    .location-info {
+      padding: 20px;
     }
-    
-    /* Careers Section */
-    .careers-section {
-      background: #f8f9fa;
+
+    .location-info h4 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 5px;
     }
-    
-    .job-card {
-      background: white;
-      padding: 25px;
-      border-radius: 10px;
-      margin: 20px 0;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .job-info h3 {
-      color: #2c3e50;
-      margin-bottom: 10px;
-    }
-    
-    .job-meta {
-      color: #666;
+
+    .location-info p {
       font-size: 14px;
+      color: #6b7280;
     }
-    
-    .job-tag {
-      display: inline-block;
-      background: #3498db;
-      color: white;
-      padding: 5px 15px;
-      border-radius: 20px;
-      font-size: 12px;
-      margin-right: 10px;
-    }
-    
-    /* Footer */
-    .footer {
-      background: #2c3e50;
-      color: white;
-      padding: 40px 5%;
+
+    /* CTA Section */
+    .cta-section {
+      padding: 100px 5%;
+      background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
       text-align: center;
     }
-    
-    .footer-links {
-      display: flex;
-      justify-content: center;
-      gap: 30px;
+
+    .cta-section h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 40px;
+      font-weight: 700;
+      color: white;
       margin-bottom: 20px;
     }
-    
-    .footer-links a {
+
+    .cta-section p {
+      font-size: 18px;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 30px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    /* Rent Your Space */
+    .rent-section {
+      padding: 80px 5%;
+      background: white;
+    }
+
+    .rent-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .rent-content h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+
+    .rent-content p {
+      font-size: 18px;
+      color: #6b7280;
+      margin-bottom: 30px;
+    }
+
+    .rent-benefits {
+      list-style: none;
+      margin-bottom: 30px;
+    }
+
+    .rent-benefits li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .rent-benefits li::before {
+      content: '✓';
+      width: 24px;
+      height: 24px;
+      background: #10b981;
       color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .rent-image {
+      background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+      border-radius: 20px;
+      height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 120px;
+    }
+
+    /* Footer */
+    .footer {
+      background: #1f2937;
+      color: white;
+      padding: 60px 5% 30px;
+    }
+
+    .footer-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .footer-brand p {
+      color: #9ca3af;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .footer-column h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .footer-column ul {
+      list-style: none;
+    }
+
+    .footer-column li {
+      margin-bottom: 12px;
+    }
+
+    .footer-column a {
+      color: #9ca3af;
       text-decoration: none;
+      font-size: 14px;
+      transition: color 0.3s;
+    }
+
+    .footer-column a:hover {
+      color: white;
+    }
+
+    .footer-bottom {
+      border-top: 1px solid #374151;
+      padding-top: 30px;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .search-form {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .value-props-grid,
+      .steps-grid,
+      .locations-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .rent-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .navbar-menu {
+        display: none;
+      }
+
+      .hero h1 {
+        font-size: 36px;
+      }
+
+      .search-form {
+        grid-template-columns: 1fr;
+      }
+
+      .value-props-grid,
+      .steps-grid,
+      .locations-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .cta-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* App Download Section */
+    .app-section {
+      padding: 80px 5%;
+      background: #f0fdf4;
+    }
+
+    .app-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .app-content h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 20px;
+    }
+
+    .app-content p {
+      font-size: 18px;
+      color: #6b7280;
+      margin-bottom: 30px;
+    }
+
+    .app-badges {
+      display: flex;
+      gap: 15px;
+    }
+
+    .app-badge {
+      background: #000;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      transition: transform 0.3s;
+    }
+
+    .app-badge:hover {
+      transform: scale(1.05);
+    }
+
+    .app-badge span {
+      font-size: 12px;
+    }
+
+    .app-badge strong {
+      font-size: 16px;
+    }
+
+    .app-mockup {
+      text-align: center;
+      font-size: 200px;
     }
   </style>
 </head>
@@ -233,190 +691,538 @@
 
   <!-- Navigation -->
   <nav class="navbar">
-    <a href="home.html" class="navbar-brand">🅿️ ParkaLot</a>
+    <a href="home.html" class="navbar-brand">
+      <span>ParkaLot</span>
+    </a>
     <ul class="navbar-menu">
-      <li><a href="#about">About</a></li>
-      <li><a href="#features">Features</a></li>
-      <li><a href="#gallery">Gallery</a></li>
-      <li><a href="#careers">Careers</a></li>
+      <li><a href="how-it-works.html">How it works</a></li>
+      <li><a href="rent-your-space.html">Rent out your space</a></li>
+      <li><a href="business.html">Business</a></li>
+      <li><a href="find-parking.html">Find parking</a></li>
       <li><a href="index.html">Login</a></li>
+      <li><a href="index.html" class="btn btn-primary">Sign up</a></li>
     </ul>
   </nav>
 
   <!-- Hero Section -->
   <section class="hero">
-    <h1>🚗 Smart Parking Made Simple</h1>
-    <p>AI-powered garage recommendations | Real-time availability | Seamless reservations</p>
-    <div class="hero-buttons">
-      <button class="btn-hero primary" onclick="location.href='index.html'">Get Started</button>
-      <button class="btn-hero secondary" onclick="location.href='#features'">Learn More</button>
+    <div class="hero-content">
+      <h1>The smarter way to park</h1>
+      <p>Book parking in seconds. Choose from thousands of spaces across the UK.</p>
+    </div>
+
+    <div class="search-box">
+      <div class="search-tabs">
+        <button class="search-tab active">Hourly/Daily</button>
+        <button class="search-tab">Monthly</button>
+        <button class="search-tab">Airport</button>
+      </div>
+
+      <form class="search-form" action="find-parking.html" method="GET">
+        <div class="form-group">
+          <label>Where do you want to park?</label>
+          <input type="text" name="location" placeholder="Enter a location, postcode or venue">
+        </div>
+        <div class="form-group">
+          <label>Arriving</label>
+          <input type="datetime-local" name="arriving">
+        </div>
+        <div class="form-group">
+          <label>Leaving</label>
+          <input type="datetime-local" name="leaving">
+        </div>
+        <button type="submit" class="search-btn">Show spaces</button>
+      </form>
     </div>
   </section>
 
-  <!-- About Section -->
-  <section id="about" class="section">
-    <h2>About ParkaLot</h2>
-    <p style="text-align: center; font-size: 18px; color: #666; max-width: 800px; margin: 0 auto; line-height: 1.8;">
-      ParkaLot is a revolutionary parking management system that combines cutting-edge AI technology 
-      with user-friendly design. We help drivers find the perfect parking space while giving businesses 
-      powerful tools to manage their facilities efficiently. With real-time availability tracking, 
-      intelligent recommendations, and seamless payment processing, parking has never been easier.
-    </p>
-  </section>
-
-  <!-- Features Section -->
-  <section id="features" class="section">
-    <h2>Our Features</h2>
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">🤖</div>
-        <h3>AI Recommendations</h3>
-        <p>Get personalized garage suggestions based on your preferences, location, budget, and parking history.</p>
+  <!-- Value Propositions -->
+  <section class="value-props">
+    <div class="value-props-grid">
+      <div class="value-card">
+        <div class="value-icon"><img src="images/icons/globe.svg" alt="Globe"></div>
+        <h3>Wherever, whenever</h3>
+        <p>Choose from thousands of parking spaces in cities, airports, and train stations across the UK.</p>
       </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <h3>Real-Time Availability</h3>
-        <p>See live parking space availability and make instant reservations with confidence.</p>
+      <div class="value-card">
+        <div class="value-icon"><img src="images/icons/shield.svg" alt="Shield"></div>
+        <h3>Peace of mind</h3>
+        <p>Reserve your space in advance and guarantee your spot. No more circling for parking.</p>
       </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">💳</div>
-        <h3>Secure Payments</h3>
-        <p>Integrated payment processing with multiple options including Stripe for seamless transactions.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>Analytics Dashboard</h3>
-        <p>Comprehensive analytics for businesses to track performance, revenue, and customer insights.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">👥</div>
-        <h3>Role-Based Access</h3>
-        <p>Customized dashboards for customers, employees, senior staff, and managers.</p>
-      </div>
-      
-      <div class="feature-card">
-        <div class="feature-icon">🔒</div>
-        <h3>Enhanced Security</h3>
-        <p>Email verification, OTP authentication, and secure data handling for peace of mind.</p>
+      <div class="value-card">
+        <div class="value-icon"><img src="images/icons/sparkle.svg" alt="Sparkle"></div>
+        <h3>Seamless experience</h3>
+        <p>Pay via our app or website and receive clear access instructions. It's that simple.</p>
       </div>
     </div>
   </section>
 
-  <!-- Gallery Section -->
-  <section id="gallery" class="section">
-    <h2>Our Facilities</h2>
-    <div class="gallery">
-      <div class="gallery-item">🏢</div>
-      <div class="gallery-item">🚘</div>
-      <div class="gallery-item">🎯</div>
-      <div class="gallery-item">⚙️</div>
-      <div class="gallery-item">🌟</div>
-      <div class="gallery-item">🔐</div>
+  <!-- How It Works -->
+  <section class="how-it-works">
+    <div class="section-header">
+      <h2>How it works</h2>
+      <p>Finding and booking parking has never been easier</p>
     </div>
-    <p style="text-align: center; margin-top: 30px; color: #666;">
-      City Center Garages • Airport Parking • Suburban Facilities • Business Districts • 24/7 Security
-    </p>
+
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-number">1</div>
+        <h4>Search</h4>
+        <p>Enter where and when you want to park</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">2</div>
+        <h4>Compare</h4>
+        <p>See prices, reviews, and availability</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">3</div>
+        <h4>Book</h4>
+        <p>Reserve your space in seconds</p>
+      </div>
+      <div class="step-card">
+        <div class="step-number">4</div>
+        <h4>Park</h4>
+        <p>Follow the instructions and enjoy stress-free parking</p>
+      </div>
+    </div>
   </section>
 
-  <!-- Careers Section -->
-  <section id="careers" class="section careers-section">
-    <h2>Join Our Team</h2>
-    <p style="text-align: center; font-size: 18px; color: #666; margin-bottom: 40px;">
-      We're always looking for talented individuals to join the ParkaLot family
-    </p>
-    
-    <div class="job-card">
-      <div class="job-info">
-        <h3>Parking Attendant</h3>
-        <div class="job-meta">
-          <span class="job-tag">Full-Time</span>
-          <span class="job-tag">Operations</span>
-          <span>£25,000 - £28,000</span>
-        </div>
-        <p style="margin-top: 10px; color: #666;">
-          Manage day-to-day parking operations, assist customers, and maintain facility standards.
-        </p>
-      </div>
-      <button class="btn primary" onclick="applyJob('Parking Attendant')">Apply Now</button>
+  <!-- Top Locations -->
+  <section class="top-locations">
+    <div class="section-header">
+      <h2>Popular parking locations</h2>
+      <p>Find parking in the UK's busiest destinations</p>
     </div>
-    
-    <div class="job-card">
-      <div class="job-info">
-        <h3>Senior Customer Service Representative</h3>
-        <div class="job-meta">
-          <span class="job-tag">Full-Time</span>
-          <span class="job-tag">Customer Service</span>
-          <span>£32,000 - £38,000</span>
+
+    <div class="locations-grid">
+      <a href="find-parking.html?location=london" class="location-card">
+        <div class="location-img" style="background: url('images/IMG_0037.jpeg') center/cover;"></div>
+        <div class="location-info">
+          <h4>London</h4>
+          <p>2,500+ spaces available</p>
         </div>
-        <p style="margin-top: 10px; color: #666;">
-          Lead customer service initiatives, manage team performance, and resolve complex issues.
-        </p>
-      </div>
-      <button class="btn primary" onclick="applyJob('Senior CSR')">Apply Now</button>
-    </div>
-    
-    <div class="job-card">
-      <div class="job-info">
-        <h3>Facility Manager</h3>
-        <div class="job-meta">
-          <span class="job-tag">Full-Time</span>
-          <span class="job-tag">Management</span>
-          <span>£45,000 - £55,000</span>
+      </a>
+      <a href="find-parking.html?location=manchester" class="location-card">
+        <div class="location-img" style="background: url('images/IMG_0038.jpeg') center/cover;"></div>
+        <div class="location-info">
+          <h4>Manchester</h4>
+          <p>1,200+ spaces available</p>
         </div>
-        <p style="margin-top: 10px; color: #666;">
-          Oversee multiple parking facilities, manage staff, and drive operational excellence.
-        </p>
-      </div>
-      <button class="btn primary" onclick="applyJob('Manager')">Apply Now</button>
-    </div>
-    
-    <div class="job-card">
-      <div class="job-info">
-        <h3>Software Developer</h3>
-        <div class="job-meta">
-          <span class="job-tag">Full-Time</span>
-          <span class="job-tag">Technology</span>
-          <span>£40,000 - £60,000</span>
+      </a>
+      <a href="find-parking.html?location=birmingham" class="location-card">
+        <div class="location-img" style="background: url('images/IMG_0039.jpeg') center/cover;"></div>
+        <div class="location-info">
+          <h4>Birmingham</h4>
+          <p>800+ spaces available</p>
         </div>
-        <p style="margin-top: 10px; color: #666;">
-          Build and maintain our platform, work with AI systems, and innovate parking technology.
-        </p>
-      </div>
-      <button class="btn primary" onclick="applyJob('Developer')">Apply Now</button>
+      </a>
+      <a href="find-parking.html?location=heathrow" class="location-card">
+        <div class="location-img" style="background: url('images/IMG_0048.jpeg') center/cover;"></div>
+        <div class="location-info">
+          <h4>Heathrow Airport</h4>
+          <p>500+ spaces available</p>
+        </div>
+      </a>
+      <a href="find-parking.html?location=gatwick" class="location-card">
+        <div class="location-img" style="background: url('images/IMG_0046.jpeg') center/cover;"></div>
+        <div class="location-info">
+          <h4>Gatwick Airport</h4>
+          <p>400+ spaces available</p>
+        </div>
+      </a>
+      <a href="find-parking.html?location=leeds" class="location-card">
+        <div class="location-img" style="background: url('images/IMG_0041.jpeg') center/cover;"></div>
+        <div class="location-info">
+          <h4>Leeds</h4>
+          <p>600+ spaces available</p>
+        </div>
+      </a>
+      <a href="find-parking.html?location=edinburgh" class="location-card">
+        <div class="location-img" style="background: url('images/IMG_0069.jpeg') center/cover;"></div>
+        <div class="location-info">
+          <h4>Edinburgh</h4>
+          <p>450+ spaces available</p>
+        </div>
+      </a>
+      <a href="find-parking.html?location=liverpool" class="location-card">
+        <div class="location-img" style="background: url('images/IMG_0070.jpeg') center/cover;"></div>
+        <div class="location-info">
+          <h4>Liverpool</h4>
+          <p>350+ spaces available</p>
+        </div>
+      </a>
     </div>
-    
-    <div style="text-align: center; margin-top: 40px;">
-      <button class="btn primary" style="font-size: 18px; padding: 15px 40px;" onclick="location.href='job_application.html'">
-        📄 Submit Your CV
-      </button>
+  </section>
+
+  <!-- Rent Your Space -->
+  <section class="rent-section">
+    <div class="rent-grid">
+      <div class="rent-content">
+        <h2>Earn money from your parking space</h2>
+        <p>Got a driveway, garage or parking space sitting empty? List it on ParkaLot and start earning today.</p>
+        <ul class="rent-benefits">
+          <li>Earn up to £200/month per space</li>
+          <li>You control when your space is available</li>
+          <li>We handle payments and bookings</li>
+          <li>Fully insured and secure</li>
+        </ul>
+        <a href="rent-your-space.html" class="btn btn-primary">List your space</a>
+      </div>
+      <div class="rent-image"><img src="images/IMG_0073.jpeg" alt="Rent your space"></div>
+    </div>
+  </section>
+
+  <!-- App Download -->
+  <section class="app-section">
+    <div class="app-grid">
+      <div class="app-content">
+        <h2>Parking made easy with our app</h2>
+        <p>Download the ParkaLot app for the fastest way to find and book parking. Get directions, manage bookings, and pay - all from your phone.</p>
+        <div class="app-badges">
+          <a href="#" class="app-badge">
+            <div>
+              <span>Download on the</span><br>
+              <strong>App Store</strong>
+            </div>
+          </a>
+          <a href="#" class="app-badge">
+            <div>
+              <span>Get it on</span><br>
+              <strong>Google Play</strong>
+            </div>
+          </a>
+        </div>
+      </div>
+      <div class="app-mockup"><img src="images/IMG_0078.jpeg" alt="Mobile app"></div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <h2>Ready to find your perfect parking spot?</h2>
+    <p>Join thousands of happy parkers who save time and money with ParkaLot</p>
+    <div class="cta-buttons">
+      <a href="find-parking.html" class="btn btn-white">Find parking</a>
+      <a href="index.html" class="btn btn-outline" style="border-color: white; color: white;">Create account</a>
+    </div>
+  </section>
+
+  <!-- Trustpilot Reviews Section -->
+  <section class="trustpilot-section" style="background: #f9fafb; padding: 60px 5%; text-align: center;">
+    <h2 style="font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Trusted by Thousands</h2>
+    <p style="color: #6b7280; margin-bottom: 30px; font-size: 18px;">See what our customers say about ParkaLot</p>
+    <div id="trustpilot-widget" data-trustpilot-widget data-limit="5" data-show-stats="true" style="max-width: 1000px; margin: 0 auto;"></div>
+  </section>
+
+  <!-- Airport Parking Promo -->
+  <section class="airport-promo" style="padding: 60px 5%; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);">
+    <div style="max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+      <div style="color: white;">
+        <h2 style="font-family: 'Poppins', sans-serif; font-size: 36px; font-weight: 700; margin-bottom: 16px;">Airport Parking Made Easy</h2>
+        <p style="font-size: 18px; margin-bottom: 24px; opacity: 0.9;">Book secure parking at all major London airports. Link your flight for real-time updates and peace of mind.</p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
+          <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-size: 14px;">Heathrow</span>
+          <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-size: 14px;">Gatwick</span>
+          <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-size: 14px;">Stansted</span>
+          <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-size: 14px;">Luton</span>
+          <span style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-size: 14px;">City</span>
+        </div>
+        <a href="airport-parking.html" class="btn" style="background: white; color: #2563eb; padding: 14px 28px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">
+          Book Airport Parking
+        </a>
+      </div>
+      <div style="text-align: center;">
+        <img src="images/IMG_0046.jpeg" alt="Airport Parking" style="width: 100%; max-width: 400px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+      </div>
     </div>
   </section>
 
   <!-- Footer -->
   <footer class="footer">
-    <div class="footer-links">
-      <a href="#about">About</a>
-      <a href="#features">Features</a>
-      <a href="#careers">Careers</a>
-      <a href="index.html">Login</a>
-      <a href="#">Privacy Policy</a>
-      <a href="#">Terms of Service</a>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span style="font-size: 24px; font-weight: bold;">ParkaLot</span>
+        <p>The smarter way to park. Find, book, and pay for parking in seconds.</p>
+      </div>
+      <div class="footer-column">
+        <h4>Drivers</h4>
+        <ul>
+          <li><a href="find-parking.html">Find parking</a></li>
+          <li><a href="how-it-works.html">How it works</a></li>
+          <li><a href="#">Mobile app</a></li>
+          <li><a href="#">Airport parking</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h4>Space owners</h4>
+        <ul>
+          <li><a href="rent-your-space.html">Rent out your space</a></li>
+          <li><a href="#">How it works</a></li>
+          <li><a href="#">Pricing</a></li>
+          <li><a href="#">FAQs</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h4>Business</h4>
+        <ul>
+          <li><a href="business.html">Solutions</a></li>
+          <li><a href="#">Enterprise</a></li>
+          <li><a href="#">Partnerships</a></li>
+        </ul>
+      </div>
+      <div class="footer-column">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#">About us</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Press</a></li>
+        </ul>
+      </div>
     </div>
-    <p>&copy; 2026 ParkaLot. All rights reserved.</p>
-    <p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
-      Smart Parking Solutions | AI-Powered Recommendations | Enterprise Management
-    </p>
+    <div class="footer-bottom">
+      <p>&copy; 2026 ParkaLot. All rights reserved. | <a href="#" style="color: #9ca3af;">Privacy Policy</a> | <a href="#" style="color: #9ca3af;">Terms of Service</a></p>
+    </div>
   </footer>
 
+  <!-- GSAP Animation Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<script>
+    // Register ScrollTrigger plugin
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Hero Section Animation
+    gsap.from('.hero h1', {
+      duration: 1,
+      y: 50,
+      opacity: 0,
+      ease: 'power3.out'
+    });
+
+    gsap.from('.hero p', {
+      duration: 1,
+      y: 30,
+      opacity: 0,
+      ease: 'power3.out',
+      delay: 0.2
+    });
+
+    gsap.from('.search-box', {
+      duration: 1,
+      y: 60,
+      opacity: 0,
+      ease: 'power3.out',
+      delay: 0.4
+    });
+
+    // Value Cards Animation
+    gsap.from('.value-card', {
+      scrollTrigger: {
+        trigger: '.value-props',
+        start: 'top 80%',
+        toggleActions: 'play none none reverse'
+      },
+      duration: 0.8,
+      y: 50,
+      opacity: 0,
+      stagger: 0.2,
+      ease: 'power2.out'
+    });
+
+    // Value Icon Bounce
+    gsap.from('.value-icon', {
+      scrollTrigger: {
+        trigger: '.value-props',
+        start: 'top 80%'
+      },
+      duration: 1,
+      scale: 0,
+      ease: 'elastic.out(1, 0.5)',
+      stagger: 0.15
+    });
+
+    // Steps Animation
+    gsap.from('.step-card', {
+      scrollTrigger: {
+        trigger: '.how-it-works',
+        start: 'top 80%',
+        toggleActions: 'play none none reverse'
+      },
+      duration: 0.6,
+      y: 40,
+      opacity: 0,
+      stagger: 0.15,
+      ease: 'power2.out'
+    });
+
+    gsap.from('.step-number', {
+      scrollTrigger: {
+        trigger: '.how-it-works',
+        start: 'top 80%'
+      },
+      duration: 0.8,
+      scale: 0,
+      rotation: -180,
+      ease: 'back.out(1.7)',
+      stagger: 0.15
+    });
+
+    // Location Cards Animation
+    gsap.from('.location-card', {
+      scrollTrigger: {
+        trigger: '.top-locations',
+        start: 'top 80%',
+        toggleActions: 'play none none reverse'
+      },
+      duration: 0.6,
+      y: 60,
+      opacity: 0,
+      stagger: 0.1,
+      ease: 'power2.out'
+    });
+
+    // Rent Section Animation
+    gsap.from('.rent-content', {
+      scrollTrigger: {
+        trigger: '.rent-section',
+        start: 'top 80%'
+      },
+      duration: 1,
+      x: -50,
+      opacity: 0,
+      ease: 'power3.out'
+    });
+
+    gsap.from('.rent-image', {
+      scrollTrigger: {
+        trigger: '.rent-section',
+        start: 'top 80%'
+      },
+      duration: 1,
+      x: 50,
+      opacity: 0,
+      ease: 'power3.out'
+    });
+
+    // App Section Animation
+    gsap.from('.app-content', {
+      scrollTrigger: {
+        trigger: '.app-section',
+        start: 'top 80%'
+      },
+      duration: 1,
+      x: -50,
+      opacity: 0,
+      ease: 'power3.out'
+    });
+
+    gsap.from('.app-mockup', {
+      scrollTrigger: {
+        trigger: '.app-section',
+        start: 'top 80%'
+      },
+      duration: 1.2,
+      scale: 0.8,
+      opacity: 0,
+      rotation: -10,
+      ease: 'power3.out'
+    });
+
+    // CTA Section Animation
+    gsap.from('.cta-section h2, .cta-section p', {
+      scrollTrigger: {
+        trigger: '.cta-section',
+        start: 'top 80%'
+      },
+      duration: 0.8,
+      y: 30,
+      opacity: 0,
+      stagger: 0.2,
+      ease: 'power2.out'
+    });
+
+    gsap.from('.cta-buttons', {
+      scrollTrigger: {
+        trigger: '.cta-section',
+        start: 'top 80%'
+      },
+      duration: 0.8,
+      y: 30,
+      opacity: 0,
+      delay: 0.4,
+      ease: 'power2.out'
+    });
+
+    // Navbar Animation
+    gsap.from('.navbar', {
+      duration: 0.8,
+      y: -100,
+      ease: 'power3.out'
+    });
+
+    // Tab switching
+    document.querySelectorAll('.search-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+      });
+    });
+
+    // Set default dates
+    const now = new Date();
+    const arriving = document.querySelector('input[name="arriving"]');
+    const leaving = document.querySelector('input[name="leaving"]');
+
+    now.setMinutes(Math.ceil(now.getMinutes() / 30) * 30);
+    arriving.value = now.toISOString().slice(0, 16);
+
+    const later = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    leaving.value = later.toISOString().slice(0, 16);
+  </script>
+
+  <!-- Streamline Icons -->
+  <script src="js/components/streamline-icons.js"></script>
+  <!-- Trustpilot Widget -->
+  <script src="js/components/trustpilot-widget.js"></script>
+  <script src="js/animations/gsap-effects.js"></script>
   <script>
-    function applyJob(position) {
-      sessionStorage.setItem('selectedPosition', position);
-      location.href = 'job_application.html';
+    // Initialize Trustpilot widget
+    if (document.getElementById('trustpilot-widget')) {
+      new TrustpilotWidget('trustpilot-widget', {
+        limit: 5,
+        showStats: true,
+        carousel: true,
+        carouselInterval: 5000,
+        animate: true
+      });
     }
+
+    // Additional airport promo animation
+    gsap.from('.airport-promo > div > div:first-child', {
+      scrollTrigger: {
+        trigger: '.airport-promo',
+        start: 'top 80%'
+      },
+      duration: 0.8,
+      x: -50,
+      opacity: 0,
+      ease: 'power3.out'
+    });
+
+    gsap.from('.airport-promo img', {
+      scrollTrigger: {
+        trigger: '.airport-promo',
+        start: 'top 80%'
+      },
+      duration: 0.8,
+      x: 50,
+      opacity: 0,
+      ease: 'power3.out',
+      delay: 0.2
+    });
   </script>
 </body>
 </html>

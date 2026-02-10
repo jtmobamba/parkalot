@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airport Parking - ParkaLot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/design-system.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--gray-800);
+            line-height: 1.6;
+            background: var(--gray-50);
+        }
+
+        /* Navigation */
+        .navbar {
+            background: white;
+            padding: 0 5%;
+            height: 72px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--gray-100);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .navbar-brand svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .navbar-brand span {
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .navbar-menu {
+            display: flex;
+            gap: 8px;
+            list-style: none;
+            align-items: center;
+        }
+
+        .navbar-menu a {
+            color: var(--gray-600);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            transition: all 0.2s;
+        }
+
+        .navbar-menu a:hover {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .navbar-menu a.active {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #3b82f6 100%);
+            padding: 60px 5% 100px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" stroke-width="0.5" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            max-width: 600px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        .hero-badge svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .hero h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 42px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 17px;
+            color: rgba(255,255,255,0.85);
+            line-height: 1.7;
+        }
+
+        /* Airport Selector */
+        .airport-selector {
+            background: white;
+            border-radius: var(--radius-xl);
+            padding: 28px 32px;
+            box-shadow: var(--shadow-xl);
+            max-width: 900px;
+            margin: -50px auto 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .airport-selector-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .airport-selector h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .airport-selector-subtitle {
+            font-size: 13px;
+            color: var(--gray-500);
+        }
+
+        .airport-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .airport-btn {
+            padding: 20px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--radius-lg);
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .airport-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transition: transform 0.2s;
+        }
+
+        .airport-btn:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .airport-btn:hover::before {
+            transform: scaleX(1);
+        }
+
+        .airport-btn.active {
+            border-color: var(--primary);
+            background: var(--primary);
+        }
+
+        .airport-btn.active::before {
+            transform: scaleX(1);
+            background: white;
+        }
+
+        .airport-btn .code {
+            font-family: 'Poppins', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            display: block;
+            color: var(--gray-800);
+            transition: color 0.2s;
+        }
+
+        .airport-btn.active .code {
+            color: white;
+        }
+
+        .airport-btn .name {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--gray-500);
+            margin-top: 4px;
+            transition: color 0.2s;
+        }
+
+        .airport-btn.active .name {
+            color: rgba(255,255,255,0.85);
+        }
+
+        /* Page Layout */
+        .page-container {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 40px 5% 80px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 32px;
+            align-items: start;
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .section-subtitle {
+            font-size: 14px;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+
+        /* Flight Link Card */
+        .flight-link-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 28px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .flight-link-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .flight-link-icon {
+            width: 44px;
+            height: 44px;
+            background: var(--primary-light);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+
+        .flight-link-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--gray-800);
+        }
+
+        .flight-link-desc {
+            font-size: 13px;
+            color: var(--gray-500);
+        }
+
+        .flight-search-form {
+            display: flex;
+            gap: 12px;
+        }
+
+        .flight-search-form input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            transition: all 0.2s;
+            background: var(--gray-50);
+        }
+
+        .flight-search-form input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .flight-result {
+            margin-top: 16px;
+        }
+
+        .flight-result-card {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #a7f3d0;
+            border-radius: var(--radius-md);
+            padding: 16px;
+        }
+
+        .flight-result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .flight-result-number {
+            font-weight: 700;
+            color: var(--success);
+            font-size: 15px;
+        }
+
+        .flight-result-airline {
+            color: var(--gray-600);
+            font-size: 13px;
+            margin-left: 8px;
+        }
+
+        .flight-status-badge {
+            background: var(--success);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .flight-result-route {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--gray-600);
+        }
+
+        /* Parking Cards */
+        .parking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .parking-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .parking-card:hover {
+            border-color: var(--gray-300);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .parking-card-body {
+            padding: 24px;
+        }
+
+        .parking-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .parking-card-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 4px;
+        }
+
+        .parking-card-location {
+            font-size: 13px;
+            color: var(--gray-500);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .availability-badge {
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .availability-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .availability-badge.available {
+            background: #ecfdf5;
+            color: #059669;
+        }
+
+        .availability-badge.filling {
+            background: #fffbeb;
+            color: #d97706;
+        }
+
+        .availability-badge.almost-full {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .parking-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 16px;
+            background: var(--gray-50);
+            border-radius: var(--radius-md);
+            margin-bottom: 20px;
+        }
+
+        .parking-stat {
+            text-align: center;
+        }
+
+        .parking-stat-value {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .parking-stat-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .parking-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .parking-price {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .parking-price-value {
+            font-family: 'Poppins', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gray-800);
+        }
+
+        .parking-price-unit {
+            font-size: 14px;
+            color: var(--gray-500);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: sticky;
+            top: 90px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+        }
+
+        .sidebar-card-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar-card-header svg {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .sidebar-card-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .sidebar-card-body {
+            padding: 20px;
+        }
+
+        /* Live Stats */
+        .live-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--gray-100);
+            margin-bottom: 16px;
+        }
+
+        .live-stat {
+            text-align: center;
+            padding: 12px 8px;
+            background: var(--gray-50);
+            border-radius: var(--radius-md);
+        }
+
+        .live-stat-value {
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .live-stat-value.blue { color: var(--primary); }
+        .live-stat-value.green { color: var(--success); }
+        .live-stat-value.orange { color: var(--warning); }
+
+        .live-stat-label {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--gray-500);
+            margin-top: 2px;
+        }
+
+        /* Live Booking Item */
+        .live-booking-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .live-booking-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .live-booking-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .live-booking-indicator::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            border-radius: 50%;
+            background: inherit;
+            opacity: 0.3;
+        }
+
+        .live-booking-indicator.blue { background: var(--primary); }
+        .live-booking-indicator.green { background: var(--success); }
+        .live-booking-indicator.gray { background: var(--gray-400); }
+
+        .live-booking-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .live-booking-vehicle {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray-800);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .live-booking-flight {
+            font-weight: 400;
+            color: var(--gray-500);
+        }
+
+        .live-booking-time {
+            font-size: 11px;
+            color: var(--gray-400);
+            margin-top: 2px;
+        }
+
+        .live-booking-status {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 100px;
+            flex-shrink: 0;
+        }
+
+        .live-booking-status.booked {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .live-booking-status.parked {
+            background: #ecfdf5;
+            color: var(--success);
+        }
+
+        .live-booking-status.completed {
+            background: var(--gray-100);
+            color: var(--gray-500);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 32px 20px;
+            color: var(--gray-500);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            color: var(--gray-300);
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* Trustpilot Section */
+        .trustpilot-section {
+            background: white;
+            border-top: 1px solid var(--gray-200);
+            padding: 60px 5%;
+            text-align: center;
+        }
+
+        .trustpilot-section h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 8px;
+        }
+
+        .trustpilot-section p {
+            color: var(--gray-500);
+            margin-bottom: 32px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--gray-900);
+            color: white;
+            padding: 64px 5% 32px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(4, 1fr);
+            gap: 48px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-brand .logo-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .footer-tagline {
+            color: var(--gray-400);
+            margin: 16px 0;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .footer-links h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: var(--gray-400);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid var(--gray-800);
+            padding-top: 24px;
+            margin-top: 48px;
+            text-align: center;
+            color: var(--gray-500);
+            font-size: 13px;
+        }
+
+        /* Skeleton Loading */
+        .skeleton {
+            background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-50) 50%, var(--gray-100) 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+            border-radius: var(--radius-md);
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Booking Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .booking-modal {
+            background: white;
+            border-radius: var(--radius-xl);
+            max-width: 560px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(30px);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .booking-modal {
+            transform: translateY(0);
+        }
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 10;
+        }
+        .modal-header h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--gray-500);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .modal-close:hover {
+            background: var(--gray-100);
+            color: var(--gray-800);
+        }
+        .modal-body {
+            padding: 24px;
+        }
+        .booking-form-section {
+            margin-bottom: 24px;
+        }
+        .booking-form-section:last-child {
+            margin-bottom: 0;
+        }
+        .booking-form-section h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .booking-form-section h4 svg {
+            width: 18px;
+            height: 18px;
+            color: var(--primary);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--gray-600);
+            margin-bottom: 6px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-size: 15px;
+            transition: all 0.2s;
+            background: white;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .booking-price-summary {
+            background: var(--gray-50);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-top: 20px;
+        }
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        .price-row .label {
+            color: var(--gray-600);
+        }
+        .price-row.total {
+            border-top: 1px solid var(--gray-200);
+            margin-top: 8px;
+            padding-top: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            color: var(--gray-800);
+        }
+        .linked-flight-badge {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #a7f3d0;
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .linked-flight-badge svg {
+            color: var(--success);
+        }
+        .linked-flight-badge span {
+            font-size: 14px;
+            font-weight: 500;
+            color: #059669;
+        }
+        #payment-step {
+            display: none;
+        }
+        #payment-step.active {
+            display: block;
+        }
+        #booking-step {
+            display: block;
+        }
+        #booking-step.hidden {
+            display: none;
+        }
+        .payment-success {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .payment-success-icon {
+            width: 80px;
+            height: 80px;
+            background: #dcfce7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .payment-success-icon svg {
+            width: 40px;
+            height: 40px;
+            color: #16a34a;
+        }
+        .payment-success h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+        }
+        .payment-success p {
+            color: var(--gray-500);
+            margin: 0 0 24px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .sidebar-card {
+                flex: 1;
+                min-width: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .airport-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .navbar-menu {
+                display: none;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 32px;
+            }
+
+            .footer-brand {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .airport-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .flight-search-form {
+                flex-direction: column;
+            }
+
+            .parking-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .live-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .sidebar {
+                flex-direction: column;
+            }
+
+            .sidebar-card {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <a href="home.html" class="navbar-brand">
+            <svg viewBox="0 0 32 32" fill="none">
+                <rect width="32" height="32" rx="8" fill="#2563eb"/>
+                <path d="M8 22V10a2 2 0 012-2h12a2 2 0 012 2v12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="12" cy="22" r="2" fill="white"/>
+                <circle cx="20" cy="22" r="2" fill="white"/>
+            </svg>
+            <span>ParkaLot</span>
+        </a>
+        <ul class="navbar-menu">
+            <li><a href="find-parking.html">Find Parking</a></li>
+            <li><a href="airport-parking.html" class="active">Airport Parking</a></li>
+            <li><a href="how-it-works.html">How It Works</a></li>
+            <li><a href="business.html">For Business</a></li>
+            <li><a href="index.html" class="btn btn-primary">Sign In</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                Real-time availability
+            </div>
+            <h1>London Airport Parking</h1>
+            <p>Book secure, affordable parking at all major London airports. Link your flight for real-time updates and peace of mind.</p>
+        </div>
+    </section>
+
+    <!-- Airport Selector -->
+    <div class="airport-selector">
+        <div class="airport-selector-header">
+            <div>
+                <h3>Select Your Airport</h3>
+                <p class="airport-selector-subtitle">Choose from 5 London airports</p>
+            </div>
+        </div>
+        <div class="airport-grid">
+            <button class="airport-btn active" data-airport="LHR">
+                <span class="code">LHR</span>
+                <span class="name">Heathrow</span>
+            </button>
+            <button class="airport-btn" data-airport="LGW">
+                <span class="code">LGW</span>
+                <span class="name">Gatwick</span>
+            </button>
+            <button class="airport-btn" data-airport="STN">
+                <span class="code">STN</span>
+                <span class="name">Stansted</span>
+            </button>
+            <button class="airport-btn" data-airport="LTN">
+                <span class="code">LTN</span>
+                <span class="name">Luton</span>
+            </button>
+            <button class="airport-btn" data-airport="LCY">
+                <span class="code">LCY</span>
+                <span class="name">City</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="page-container">
+        <div class="main-grid">
+            <!-- Main Column -->
+            <main>
+                <!-- Flight Link -->
+                <div class="flight-link-card">
+                    <div class="flight-link-header">
+                        <div class="flight-link-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="flight-link-title">Link Your Flight</div>
+                            <div class="flight-link-desc">Get parking reminders based on your flight schedule</div>
+                        </div>
+                    </div>
+                    <div class="flight-search-form">
+                        <input type="text" id="flightNumber" placeholder="Enter flight number (e.g., BA123)" maxlength="10">
+                        <button class="btn btn-primary" id="searchFlightBtn">Find Flight</button>
+                    </div>
+                    <div id="flightResult" class="flight-result"></div>
+                </div>
+
+                <!-- Parking Results -->
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Available Parking</h2>
+                        <p class="section-subtitle">Near <span id="selectedAirportName">Heathrow</span> Airport</p>
+                    </div>
+                </div>
+
+                <div id="parkingResults" class="parking-list">
+                    <div class="skeleton" style="height: 220px;"></div>
+                    <div class="skeleton" style="height: 220px;"></div>
+                </div>
+            </main>
+
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                        <span class="sidebar-card-title">Live Departures</span>
+                    </div>
+                    <div class="sidebar-card-body">
+                        <div id="flightTracker"></div>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <div class="sidebar-card-header">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span class="sidebar-card-title">Live Activity</span>
+                    </div>
+                    <div class="sidebar-card-body">
+                        <div id="liveBookings">
+                            <div class="skeleton" style="height: 180px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Trustpilot Section -->
+    <section class="trustpilot-section">
+        <h3>Trusted by Travellers</h3>
+        <p>See what our customers say about their airport parking experience</p>
+        <div id="trustpilot-widget"></div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <span class="logo-text">ParkaLot</span>
+                <p class="footer-tagline">The smarter way to park at London airports. Real-time availability, secure booking, and flight tracking.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Quick Links</h4>
+                <ul>
+                    <li><a href="find-parking.html">Find Parking</a></li>
+                    <li><a href="airport-parking.html">Airport Parking</a></li>
+                    <li><a href="how-it-works.html">How It Works</a></li>
+                    <li><a href="business.html">For Business</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>London Airports</h4>
+                <ul>
+                    <li><a href="?airport=LHR">Heathrow (LHR)</a></li>
+                    <li><a href="?airport=LGW">Gatwick (LGW)</a></li>
+                    <li><a href="?airport=STN">Stansted (STN)</a></li>
+                    <li><a href="?airport=LTN">Luton (LTN)</a></li>
+                    <li><a href="?airport=LCY">City (LCY)</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="#">Help Centre</a></li>
+                    <li><a href="#">Contact Us</a></li>
+                    <li><a href="#">FAQs</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Cookie Policy</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 ParkaLot. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Booking Modal -->
+    <div class="modal-overlay" id="bookingModal">
+        <div class="booking-modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Book Airport Parking</h2>
+                <button class="modal-close" onclick="closeBookingModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Step 1: Booking Details -->
+                <div id="booking-step">
+                    <div id="linkedFlightDisplay"></div>
+
+                    <div class="booking-form-section">
+                        <h4>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            Parking Dates
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Drop-off Date & Time</label>
+                                <input type="datetime-local" id="dropoffDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Pick-up Date & Time</label>
+                                <input type="datetime-local" id="pickupDate" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="booking-form-section">
+                        <h4>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                            </svg>
+                            Flight Details (Optional)
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Return Flight Number</label>
+                                <input type="text" id="returnFlightNumber" placeholder="e.g., BA456" maxlength="10">
+                            </div>
+                            <div class="form-group">
+                                <label>Terminal</label>
+                                <select id="terminalSelect">
+                                    <option value="">Select terminal</option>
+                                    <option value="1">Terminal 1</option>
+                                    <option value="2">Terminal 2</option>
+                                    <option value="3">Terminal 3</option>
+                                    <option value="4">Terminal 4</option>
+                                    <option value="5">Terminal 5</option>
+                                    <option value="N">North Terminal</option>
+                                    <option value="S">South Terminal</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="booking-form-section">
+                        <h4>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="1" y="3" width="15" height="13" rx="2"/>
+                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                                <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                            </svg>
+                            Vehicle Details
+                        </h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Registration Number *</label>
+                                <input type="text" id="vehicleReg" placeholder="e.g., AB12 CDE" required style="text-transform: uppercase;">
+                            </div>
+                            <div class="form-group">
+                                <label>Vehicle Make</label>
+                                <input type="text" id="vehicleMake" placeholder="e.g., BMW">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Vehicle Model</label>
+                                <input type="text" id="vehicleModel" placeholder="e.g., 3 Series">
+                            </div>
+                            <div class="form-group">
+                                <label>Vehicle Colour</label>
+                                <select id="vehicleColor">
+                                    <option value="">Select colour</option>
+                                    <option value="Black">Black</option>
+                                    <option value="White">White</option>
+                                    <option value="Silver">Silver</option>
+                                    <option value="Grey">Grey</option>
+                                    <option value="Blue">Blue</option>
+                                    <option value="Red">Red</option>
+                                    <option value="Green">Green</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="booking-price-summary" id="priceSummary">
+                        <div class="price-row">
+                            <span class="label">Car Park</span>
+                            <span id="summaryCarPark">-</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="label">Duration</span>
+                            <span id="summaryDuration">-</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="label">Parking Fee</span>
+                            <span id="summaryParkingFee">-</span>
+                        </div>
+                        <div class="price-row">
+                            <span class="label">Service Fee</span>
+                            <span id="summaryServiceFee">-</span>
+                        </div>
+                        <div class="price-row total">
+                            <span>Total</span>
+                            <span id="summaryTotal">-</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-primary" style="width: 100%; padding: 14px;" onclick="proceedToPayment()">
+                            Continue to Payment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Payment -->
+                <div id="payment-step">
+                    <div id="payment-container">
+                        <!-- Stripe payment component mounts here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="js/components/streamline-icons.js"></script>
+    <script src="js/components/trustpilot-widget.js"></script>
+    <script src="js/components/flight-tracker.js"></script>
+    <script src="js/components/stripe-payment.js"></script>
+    <script src="js/animations/gsap-effects.js"></script>
+
+    <script>
+        const API = '/api/index.php?route=';
+        let stripePayment = null;
+        let currentBooking = null;
+        let selectedCarPark = null;
+
+        const airports = {
+            LHR: { name: 'Heathrow', fullName: 'London Heathrow Airport' },
+            LGW: { name: 'Gatwick', fullName: 'London Gatwick Airport' },
+            STN: { name: 'Stansted', fullName: 'London Stansted Airport' },
+            LTN: { name: 'Luton', fullName: 'London Luton Airport' },
+            LCY: { name: 'City', fullName: 'London City Airport' }
+        };
+
+        let selectedAirport = 'LHR';
+        let linkedFlight = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const airportParam = urlParams.get('airport');
+            if (airportParam && airports[airportParam]) {
+                selectedAirport = airportParam;
+            }
+
+            document.querySelectorAll('.airport-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.airport === selectedAirport);
+            });
+
+            updateAirportDisplay();
+            loadParkingData();
+            initFlightTracker();
+            loadLiveBookings();
+
+            if (typeof TrustpilotWidget !== 'undefined') {
+                new TrustpilotWidget('trustpilot-widget', {
+                    limit: 5,
+                    carousel: true,
+                    showStats: true
+                });
+            }
+
+            document.querySelectorAll('.airport-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.airport-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedAirport = this.dataset.airport;
+                    updateAirportDisplay();
+                    loadParkingData();
+                    initFlightTracker();
+                    loadLiveBookings();
+                    history.pushState({}, '', `?airport=${selectedAirport}`);
+                });
+            });
+
+            document.getElementById('searchFlightBtn').addEventListener('click', searchFlight);
+            document.getElementById('flightNumber').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') searchFlight();
+            });
+        });
+
+        function updateAirportDisplay() {
+            document.getElementById('selectedAirportName').textContent = airports[selectedAirport].name;
+        }
+
+        async function loadParkingData() {
+            const resultsEl = document.getElementById('parkingResults');
+            resultsEl.innerHTML = `
+                <div class="skeleton" style="height: 220px;"></div>
+                <div class="skeleton" style="height: 220px;"></div>
+            `;
+
+            try {
+                const response = await fetch(API + 'london-parking');
+                const data = await response.json();
+
+                if (data.success && data.carParks) {
+                    renderParkingResults(Object.values(data.carParks).filter(cp => cp && cp.name));
+                } else {
+                    resultsEl.innerHTML = '<div class="empty-state"><p>Unable to load parking data</p></div>';
+                }
+            } catch (error) {
+                console.error('Failed to load parking data', error);
+                resultsEl.innerHTML = '<div class="empty-state"><p>Unable to load parking options</p></div>';
+            }
+        }
+
+        function renderParkingResults(carParks) {
+            const resultsEl = document.getElementById('parkingResults');
+
+            if (!carParks || !carParks.length) {
+                resultsEl.innerHTML = '<div class="empty-state"><p>No parking available at this time</p></div>';
+                return;
+            }
+
+            resultsEl.innerHTML = carParks.slice(0, 6).map(carPark => {
+                const occupancy = carPark.occupancyPercent || 0;
+                const statusClass = occupancy < 50 ? 'available' : occupancy < 80 ? 'filling' : 'almost-full';
+                const statusText = occupancy < 50 ? 'Available' : occupancy < 80 ? 'Filling Up' : 'Almost Full';
+                const price = (3.50 + Math.random() * 3).toFixed(2);
+
+                return `
+                    <div class="parking-card">
+                        <div class="parking-card-body">
+                            <div class="parking-card-header">
+                                <div>
+                                    <h4 class="parking-card-title">${carPark.name || 'Car Park'}</h4>
+                                    <span class="parking-card-location">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                            <circle cx="12" cy="10" r="3"/>
+                                        </svg>
+                                        Near ${airports[selectedAirport].name} Airport
+                                    </span>
+                                </div>
+                                <span class="availability-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            <div class="parking-stats">
+                                <div class="parking-stat">
+                                    <div class="parking-stat-value">${carPark.freeSpaces || 0}</div>
+                                    <div class="parking-stat-label">Free</div>
+                                </div>
+                                <div class="parking-stat">
+                                    <div class="parking-stat-value">${carPark.totalSpaces || 0}</div>
+                                    <div class="parking-stat-label">Total</div>
+                                </div>
+                                <div class="parking-stat">
+                                    <div class="parking-stat-value">${occupancy}%</div>
+                                    <div class="parking-stat-label">Full</div>
+                                </div>
+                            </div>
+                            <div class="parking-card-footer">
+                                <div class="parking-price">
+                                    <span class="parking-price-value">&pound;${price}</span>
+                                    <span class="parking-price-unit">/hour</span>
+                                </div>
+                                <button class="btn btn-primary" onclick="bookParking('${carPark.id || ''}')">Book Now</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (typeof gsap !== 'undefined') {
+                gsap.from('.parking-card', {
+                    opacity: 0,
+                    y: 20,
+                    duration: 0.4,
+                    stagger: 0.08,
+                    ease: 'power2.out'
+                });
+            }
+        }
+
+        function initFlightTracker() {
+            if (typeof FlightTracker !== 'undefined') {
+                new FlightTracker('flightTracker', {
+                    airport: selectedAirport,
+                    type: 'departures',
+                    limit: 5,
+                    showSearch: false,
+                    onFlightSelect: linkFlight
+                });
+            }
+        }
+
+        async function searchFlight() {
+            const flightNumber = document.getElementById('flightNumber').value.trim().toUpperCase();
+            const resultEl = document.getElementById('flightResult');
+
+            if (!flightNumber || flightNumber.length < 3) {
+                resultEl.innerHTML = '<p style="color: var(--danger); font-size: 13px; margin-top: 8px;">Please enter a valid flight number</p>';
+                return;
+            }
+
+            resultEl.innerHTML = '<div class="skeleton" style="height: 60px; margin-top: 12px;"></div>';
+
+            try {
+                const response = await fetch(API + 'flights/status&flight=' + flightNumber);
+                const data = await response.json();
+
+                if (data.success && data.flight) {
+                    linkedFlight = data.flight;
+                    resultEl.innerHTML = `
+                        <div class="flight-result-card">
+                            <div class="flight-result-header">
+                                <div>
+                                    <span class="flight-result-number">${data.flight.flightNumber}</span>
+                                    <span class="flight-result-airline">${data.flight.airline?.name || ''}</span>
+                                </div>
+                                <span class="flight-status-badge">${data.flight.statusLabel || data.flight.status}</span>
+                            </div>
+                            <div class="flight-result-route">${data.flight.departure?.city || ''} to ${data.flight.arrival?.city || ''}</div>
+                        </div>
+                    `;
+                } else {
+                    resultEl.innerHTML = '<p style="color: var(--danger); font-size: 13px; margin-top: 8px;">Flight not found</p>';
+                }
+            } catch (error) {
+                resultEl.innerHTML = '<p style="color: var(--danger); font-size: 13px; margin-top: 8px;">Unable to search flight</p>';
+            }
+        }
+
+        function linkFlight(flight) {
+            linkedFlight = flight;
+            document.getElementById('flightNumber').value = flight.flightNumber;
+            document.getElementById('flightResult').innerHTML = `
+                <div class="flight-result-card">
+                    <div class="flight-result-header">
+                        <span class="flight-result-number">Flight linked: ${flight.flightNumber}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function bookParking(carParkId) {
+            // Check authentication
+            const token = localStorage.getItem('parkalot_token') || sessionStorage.getItem('parkalot_token');
+            if (!token) {
+                window.location.href = 'index.html?redirect=airport-parking&airport=' + selectedAirport;
+                return;
+            }
+
+            // Find car park in results
+            const parkingResults = document.getElementById('parkingResults');
+            const cards = parkingResults.querySelectorAll('.parking-card');
+            let carParkName = 'Airport Parking';
+            let hourlyRate = 4.50;
+
+            // Get car park details from the card
+            cards.forEach(card => {
+                const bookBtn = card.querySelector('.btn-primary');
+                if (bookBtn && bookBtn.getAttribute('onclick')?.includes(carParkId)) {
+                    carParkName = card.querySelector('.parking-card-title')?.textContent || carParkName;
+                    const priceEl = card.querySelector('.parking-price-value');
+                    if (priceEl) {
+                        hourlyRate = parseFloat(priceEl.textContent.replace('£', '')) || hourlyRate;
+                    }
+                }
+            });
+
+            selectedCarPark = {
+                id: carParkId,
+                name: carParkName,
+                hourlyRate: hourlyRate,
+                airport: selectedAirport
+            };
+
+            // Set default dates
+            const now = new Date();
+            now.setHours(now.getHours() + 2);
+            now.setMinutes(0);
+            document.getElementById('dropoffDate').value = formatDateTimeLocal(now);
+
+            const returnDate = new Date(now);
+            returnDate.setDate(returnDate.getDate() + 7);
+            document.getElementById('pickupDate').value = formatDateTimeLocal(returnDate);
+
+            // Show linked flight if any
+            const linkedFlightDisplay = document.getElementById('linkedFlightDisplay');
+            if (linkedFlight) {
+                linkedFlightDisplay.innerHTML = `
+                    <div class="linked-flight-badge">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                        <span>Linked to flight: ${linkedFlight.flightNumber}</span>
+                    </div>
+                `;
+            } else {
+                linkedFlightDisplay.innerHTML = '';
+            }
+
+            // Update summary
+            updatePriceSummary();
+
+            // Open modal
+            openBookingModal();
+        }
+
+        function formatDateTimeLocal(date) {
+            return date.toISOString().slice(0, 16);
+        }
+
+        function openBookingModal() {
+            document.getElementById('bookingModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            // Reset to booking step
+            document.getElementById('booking-step').classList.remove('hidden');
+            document.getElementById('payment-step').classList.remove('active');
+        }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.remove('active');
+            document.body.style.overflow = '';
+
+            // Clean up payment component
+            if (stripePayment) {
+                stripePayment.destroy();
+                stripePayment = null;
+            }
+
+            // Reset form
+            document.getElementById('payment-container').innerHTML = '';
+            document.getElementById('booking-step').classList.remove('hidden');
+            document.getElementById('payment-step').classList.remove('active');
+            currentBooking = null;
+        }
+
+        function updatePriceSummary() {
+            if (!selectedCarPark) return;
+
+            const dropoff = new Date(document.getElementById('dropoffDate').value);
+            const pickup = new Date(document.getElementById('pickupDate').value);
+
+            if (isNaN(dropoff.getTime()) || isNaN(pickup.getTime()) || pickup <= dropoff) {
+                document.getElementById('summaryDuration').textContent = '-';
+                document.getElementById('summaryParkingFee').textContent = '-';
+                document.getElementById('summaryServiceFee').textContent = '-';
+                document.getElementById('summaryTotal').textContent = '-';
+                return;
+            }
+
+            const hours = Math.ceil((pickup - dropoff) / (1000 * 60 * 60));
+            const days = Math.ceil(hours / 24);
+
+            // Calculate price (daily rate is better for long stays)
+            let parkingFee;
+            if (days >= 1) {
+                const dailyRate = selectedCarPark.hourlyRate * 8; // Daily rate = 8 hours
+                parkingFee = days * dailyRate;
+            } else {
+                parkingFee = hours * selectedCarPark.hourlyRate;
+            }
+
+            const serviceFee = parkingFee * 0.10;
+            const total = parkingFee + serviceFee;
+
+            // Update summary
+            document.getElementById('summaryCarPark').textContent = selectedCarPark.name;
+            document.getElementById('summaryDuration').textContent = days >= 1 ? `${days} day${days > 1 ? 's' : ''}` : `${hours} hour${hours > 1 ? 's' : ''}`;
+            document.getElementById('summaryParkingFee').textContent = `£${parkingFee.toFixed(2)}`;
+            document.getElementById('summaryServiceFee').textContent = `£${serviceFee.toFixed(2)}`;
+            document.getElementById('summaryTotal').textContent = `£${total.toFixed(2)}`;
+
+            // Store for payment
+            currentBooking = {
+                carParkId: selectedCarPark.id,
+                carParkName: selectedCarPark.name,
+                airport: selectedCarPark.airport,
+                dropoff: dropoff,
+                pickup: pickup,
+                hours: hours,
+                days: days,
+                parkingFee: parkingFee,
+                serviceFee: serviceFee,
+                total: total
+            };
+        }
+
+        // Update price when dates change
+        document.getElementById('dropoffDate').addEventListener('change', updatePriceSummary);
+        document.getElementById('pickupDate').addEventListener('change', updatePriceSummary);
+
+        async function proceedToPayment() {
+            // Validate form
+            const vehicleReg = document.getElementById('vehicleReg').value.trim();
+            if (!vehicleReg) {
+                alert('Please enter your vehicle registration number');
+                return;
+            }
+
+            const dropoff = document.getElementById('dropoffDate').value;
+            const pickup = document.getElementById('pickupDate').value;
+            if (!dropoff || !pickup) {
+                alert('Please select drop-off and pick-up dates');
+                return;
+            }
+
+            if (!currentBooking || currentBooking.total <= 0) {
+                alert('Please select valid booking dates');
+                return;
+            }
+
+            // Collect all booking data
+            currentBooking.vehicleReg = vehicleReg.toUpperCase();
+            currentBooking.vehicleMake = document.getElementById('vehicleMake').value.trim();
+            currentBooking.vehicleModel = document.getElementById('vehicleModel').value.trim();
+            currentBooking.vehicleColor = document.getElementById('vehicleColor').value;
+            currentBooking.terminal = document.getElementById('terminalSelect').value;
+            currentBooking.returnFlightNumber = document.getElementById('returnFlightNumber').value.trim().toUpperCase();
+            currentBooking.linkedFlight = linkedFlight ? linkedFlight.flightNumber : null;
+
+            // Switch to payment step
+            document.getElementById('booking-step').classList.add('hidden');
+            document.getElementById('payment-step').classList.add('active');
+            document.getElementById('modal-title').textContent = 'Complete Payment';
+
+            // Initialize payment component
+            await initAirportPayment();
+        }
+
+        async function initAirportPayment() {
+            if (stripePayment) {
+                stripePayment.destroy();
+            }
+
+            stripePayment = new StripePayment('payment-container', {
+                apiEndpoint: '/api/index.php',
+                onSuccess: handleAirportPaymentSuccess,
+                onError: handlePaymentError,
+                onCancel: () => {
+                    // Go back to booking step
+                    document.getElementById('booking-step').classList.remove('hidden');
+                    document.getElementById('payment-step').classList.remove('active');
+                    document.getElementById('modal-title').textContent = 'Book Airport Parking';
+                }
+            });
+
+            await stripePayment.init();
+
+            stripePayment.render({
+                spaceName: currentBooking.carParkName,
+                location: `${airports[currentBooking.airport].fullName}${currentBooking.terminal ? ' - Terminal ' + currentBooking.terminal : ''}`,
+                duration: currentBooking.days >= 1 ? `${currentBooking.days} day${currentBooking.days > 1 ? 's' : ''}` : `${currentBooking.hours} hours`,
+                dates: `${formatDisplayDate(currentBooking.dropoff)} - ${formatDisplayDate(currentBooking.pickup)}`,
+                subtotal: currentBooking.parkingFee,
+                serviceFee: currentBooking.serviceFee,
+                amount: currentBooking.total,
+                bookingType: 'airport',
+                spaceId: currentBooking.carParkId
+            });
+        }
+
+        function formatDisplayDate(date) {
+            return date.toLocaleDateString('en-GB', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        async function handleAirportPaymentSuccess(result) {
+            // Show success in payment container
+            const container = document.getElementById('payment-container');
+            container.innerHTML = `
+                <div class="payment-success">
+                    <div class="payment-success-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 6L9 17l-5-5"/>
+                        </svg>
+                    </div>
+                    <h3>Booking Confirmed!</h3>
+                    <p>Your airport parking has been booked. Check your email for confirmation and parking instructions.</p>
+                    <p style="font-size: 12px; color: var(--gray-400); margin-bottom: 20px;">
+                        Reference: ${result.paymentIntentId || 'DEMO-' + Date.now()}
+                    </p>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="goToDashboard()">View My Bookings</button>
+                </div>
+            `;
+
+            // Create booking in backend
+            await createAirportBooking(result);
+        }
+
+        async function createAirportBooking(paymentResult) {
+            try {
+                const token = localStorage.getItem('parkalot_token') || sessionStorage.getItem('parkalot_token');
+                const response = await fetch('/api/index.php?route=airport-booking', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        car_park_id: currentBooking.carParkId,
+                        car_park_name: currentBooking.carParkName,
+                        airport_code: currentBooking.airport,
+                        terminal: currentBooking.terminal,
+                        dropoff_date: currentBooking.dropoff.toISOString(),
+                        pickup_date: currentBooking.pickup.toISOString(),
+                        vehicle_reg: currentBooking.vehicleReg,
+                        vehicle_make: currentBooking.vehicleMake,
+                        vehicle_model: currentBooking.vehicleModel,
+                        vehicle_color: currentBooking.vehicleColor,
+                        outbound_flight: currentBooking.linkedFlight,
+                        return_flight: currentBooking.returnFlightNumber,
+                        total_price: currentBooking.total,
+                        payment_intent_id: paymentResult.paymentIntentId
+                    })
+                });
+
+                const data = await response.json();
+                if (!data.success) {
+                    console.warn('Airport booking creation returned:', data);
+                }
+            } catch (e) {
+                console.error('Failed to create airport booking:', e);
+            }
+        }
+
+        function handlePaymentError(error) {
+            console.error('Payment failed:', error);
+        }
+
+        function goToDashboard() {
+            window.location.href = 'customer_dashboard.html';
+        }
+
+        // Close modal on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeBookingModal();
+        });
+
+        // Close modal on backdrop click
+        document.getElementById('bookingModal').addEventListener('click', (e) => {
+            if (e.target.id === 'bookingModal') closeBookingModal();
+        });
+
+        async function loadLiveBookings() {
+            const container = document.getElementById('liveBookings');
+
+            try {
+                const response = await fetch(API + 'parking/live-activity&airport=' + selectedAirport + '&limit=5');
+                const data = await response.json();
+
+                if (data.success) {
+                    renderLiveBookings(data.bookings, data.stats);
+                } else {
+                    container.innerHTML = '<div class="empty-state"><p>No live activity</p></div>';
+                }
+            } catch (error) {
+                console.error('Failed to load live bookings', error);
+                container.innerHTML = '<div class="empty-state"><p>Unable to load activity</p></div>';
+            }
+        }
+
+        function renderLiveBookings(bookings, stats) {
+            const container = document.getElementById('liveBookings');
+
+            let html = `
+                <div class="live-stats">
+                    <div class="live-stat">
+                        <div class="live-stat-value blue">${stats.totalToday}</div>
+                        <div class="live-stat-label">Today</div>
+                    </div>
+                    <div class="live-stat">
+                        <div class="live-stat-value green">${stats.currentlyParked}</div>
+                        <div class="live-stat-label">Parked</div>
+                    </div>
+                    <div class="live-stat">
+                        <div class="live-stat-value orange">${stats.upcoming}</div>
+                        <div class="live-stat-label">Upcoming</div>
+                    </div>
+                </div>
+            `;
+
+            if (!bookings || bookings.length === 0) {
+                html += '<div class="empty-state"><p>No recent bookings</p></div>';
+            } else {
+                bookings.forEach(booking => {
+                    const indicatorClass = booking.booking_status === 'confirmed' ? 'blue' :
+                                          ['checked_in', 'active'].includes(booking.booking_status) ? 'green' : 'gray';
+                    const statusClass = booking.booking_status === 'confirmed' ? 'booked' :
+                                       ['checked_in', 'active'].includes(booking.booking_status) ? 'parked' : 'completed';
+                    const statusLabel = booking.booking_status === 'confirmed' ? 'Booked' :
+                                       booking.booking_status === 'checked_in' ? 'Checked In' :
+                                       booking.booking_status === 'active' ? 'Parked' : 'Done';
+
+                    html += `
+                        <div class="live-booking-item">
+                            <div class="live-booking-indicator ${indicatorClass}"></div>
+                            <div class="live-booking-info">
+                                <div class="live-booking-vehicle">
+                                    ${booking.vehicle_hint || 'Vehicle'}
+                                    ${booking.flight_number ? `<span class="live-booking-flight">${booking.flight_number}</span>` : ''}
+                                </div>
+                                <div class="live-booking-time">${getTimeAgo(booking.created_at)}</div>
+                            </div>
+                            <span class="live-booking-status ${statusClass}">${statusLabel}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+
+            if (typeof gsap !== 'undefined') {
+                gsap.from('.live-booking-item', {
+                    opacity: 0,
+                    x: -10,
+                    duration: 0.3,
+                    stagger: 0.05,
+                    ease: 'power2.out'
+                });
+            }
+        }
+
+        function getTimeAgo(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+        }
+    </script>
+</body>
+</html>

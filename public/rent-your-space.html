@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rent Out Your Space - ParkaLot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-dark: #047857;
+      --primary-light: #d1fae5;
+      --secondary: #2563eb;
+      --text-dark: #111827;
+      --text-gray: #6b7280;
+      --text-light: #9ca3af;
+      --bg-light: #f9fafb;
+      --bg-white: #ffffff;
+      --border: #e5e7eb;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.1);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text-dark);
+      line-height: 1.6;
+      background: var(--bg-white);
+    }
+
+    /* Navbar */
+    .navbar {
+      background: var(--bg-white);
+      padding: 16px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .navbar-brand {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--secondary);
+      text-decoration: none;
+    }
+
+    .navbar-menu {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+      align-items: center;
+    }
+
+    .navbar-menu a {
+      color: var(--text-gray);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .navbar-menu a:hover { color: var(--text-dark); }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .btn-lg {
+      padding: 14px 28px;
+      font-size: 16px;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, #10b981 100%);
+      padding: 80px 5% 100px;
+    }
+
+    .hero-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .hero-content h1 {
+      font-size: 48px;
+      font-weight: 700;
+      color: white;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+
+    .hero-content p {
+      font-size: 18px;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 32px;
+      max-width: 480px;
+    }
+
+    .hero-features {
+      display: flex;
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .hero-feature {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.9);
+      font-size: 14px;
+    }
+
+    .hero-feature svg {
+      width: 20px;
+      height: 20px;
+      color: white;
+    }
+
+    .hero-image img {
+      width: 100%;
+      max-width: 500px;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+    }
+
+    /* Calculator Card */
+    .calculator-section {
+      padding: 0 5%;
+      margin-top: -60px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .calculator-card {
+      max-width: 900px;
+      margin: 0 auto;
+      background: var(--bg-white);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+    }
+
+    .calculator-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .calculator-header h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+    }
+
+    .calculator-header p {
+      color: var(--text-gray);
+      font-size: 14px;
+    }
+
+    .calculator-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+    }
+
+    .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      color: var(--text-dark);
+      background: var(--bg-white);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .earnings-display {
+      background: var(--primary-light);
+      border-radius: var(--radius-md);
+      padding: 32px;
+      text-align: center;
+    }
+
+    .earnings-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .earnings-amount {
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .earnings-period {
+      font-size: 14px;
+      color: var(--text-gray);
+      margin-top: 8px;
+    }
+
+    /* Benefits Section */
+    .section {
+      padding: 80px 5%;
+    }
+
+    .section-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .section-header h2 {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 12px;
+    }
+
+    .section-header p {
+      font-size: 16px;
+      color: var(--text-gray);
+    }
+
+    /* Enhanced Benefits Section */
+    .benefits-section {
+      background: linear-gradient(180deg, #ecfdf5 0%, #f0fdf4 50%, var(--bg-white) 100%);
+      padding: 60px 5% 80px;
+      margin-top: 40px;
+      position: relative;
+    }
+
+    .benefits-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--primary) 0%, #10b981 100%);
+    }
+
+    .benefits-section .section-header {
+      margin-bottom: 56px;
+    }
+
+    .benefits-section .section-header h2 {
+      font-size: 40px;
+      color: var(--primary-dark);
+      position: relative;
+      display: inline-block;
+    }
+
+    .benefits-section .section-header h2::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .benefits-section .section-header p {
+      font-size: 18px;
+      color: var(--text-gray);
+      margin-top: 24px;
+    }
+
+    .benefits-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .benefits-badge svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+    }
+
+    .benefit-card {
+      background: var(--bg-white);
+      border: 2px solid transparent;
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(5, 150, 105, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .benefit-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary) 0%, #10b981 100%);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .benefit-card:hover {
+      border-color: var(--primary-light);
+      box-shadow: 0 12px 40px rgba(5, 150, 105, 0.15);
+      transform: translateY(-4px);
+    }
+
+    .benefit-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .benefit-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--primary-light) 0%, #d1fae5 100%);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.15);
+    }
+
+    .benefit-icon img {
+      width: 28px;
+      height: 28px;
+    }
+
+    .benefit-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 10px;
+    }
+
+    .benefit-card p {
+      font-size: 15px;
+      color: var(--text-gray);
+      line-height: 1.7;
+    }
+
+    /* How It Works */
+    .how-it-works {
+      background: var(--bg-light);
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 32px;
+    }
+
+    .step-card {
+      text-align: center;
+      position: relative;
+    }
+
+    .step-card::after {
+      content: '';
+      position: absolute;
+      top: 28px;
+      right: -16px;
+      width: 32px;
+      height: 2px;
+      background: var(--border);
+    }
+
+    .step-card:last-child::after {
+      display: none;
+    }
+
+    .step-number {
+      width: 56px;
+      height: 56px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 auto 20px;
+    }
+
+    .step-card h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+    }
+
+    .step-card p {
+      font-size: 14px;
+      color: var(--text-gray);
+      line-height: 1.5;
+    }
+
+    /* Testimonials */
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .testimonial-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 28px;
+    }
+
+    .testimonial-rating {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+    }
+
+    .testimonial-rating svg {
+      width: 16px;
+      height: 16px;
+      color: #fbbf24;
+      fill: #fbbf24;
+    }
+
+    .testimonial-text {
+      font-size: 14px;
+      color: var(--text-dark);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .author-avatar {
+      width: 44px;
+      height: 44px;
+      background: var(--primary-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .author-info {
+      flex: 1;
+    }
+
+    .author-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-dark);
+    }
+
+    .author-earning {
+      font-size: 13px;
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    /* CTA Section */
+    .cta-section {
+      background: linear-gradient(135deg, var(--primary) 0%, #10b981 100%);
+      padding: 80px 5%;
+      text-align: center;
+    }
+
+    .cta-section h2 {
+      font-size: 32px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 12px;
+    }
+
+    .cta-section p {
+      font-size: 16px;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 32px;
+    }
+
+    .cta-section .btn {
+      background: white;
+      color: var(--primary);
+    }
+
+    .cta-section .btn:hover {
+      background: var(--primary-light);
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--text-dark);
+      padding: 32px 5%;
+      text-align: center;
+    }
+
+    .footer p {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .hero-container { grid-template-columns: 1fr; text-align: center; }
+      .hero-content h1 { font-size: 40px; }
+      .hero-content p { margin: 0 auto 32px; }
+      .hero-features { justify-content: center; }
+      .hero-image { display: none; }
+      .calculator-grid { grid-template-columns: 1fr; }
+      .benefits-grid { grid-template-columns: repeat(2, 1fr); }
+      .steps-grid { grid-template-columns: repeat(2, 1fr); }
+      .step-card::after { display: none; }
+      .testimonials-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 768px) {
+      .navbar-menu { display: none; }
+      .hero-content h1 { font-size: 32px; }
+      .benefits-section { padding: 60px 5%; }
+      .benefits-section .section-header h2 { font-size: 28px; }
+      .benefits-grid { grid-template-columns: 1fr; }
+      .benefit-card { padding: 24px; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .earnings-amount { font-size: 48px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar"><ul>
+    <a href="home.html" class="navbar-brand">ParkaLot</a></ul>
+    <ul class="navbar-menu">
+      <li><a href="how-it-works.html">How it works</a></li>
+      <li><a href="rent-your-space.html">Rent out your space</a></li>
+      <li><a href="business.html">Business</a></li>
+      <li><a href="find-parking.html">Find parking</a></li>
+      <li><a href="index.html">Login</a></li>
+      <li><a href="index.html" class="btn btn-secondary">Sign up</a></li>
+    </ul>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-container">
+      <div class="hero-content">
+        <h1>Earn money from your empty parking space</h1>
+        <p>Turn your driveway, garage, or parking space into a steady source of income. Join thousands of space owners already earning with ParkaLot.</p>
+        <a href="index.html" class="btn btn-primary btn-lg">List your space free</a>
+        <div class="hero-features">
+          <div class="hero-feature">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Free to list
+          </div>
+          <div class="hero-feature">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Full insurance
+          </div>
+          <div class="hero-feature">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Weekly payouts
+          </div>
+        </div>
+      </div>
+      <div class="hero-image">
+        <img src="images/IMG_0074.jpeg" alt="Rent your parking space">
+      </div>
+    </div>
+  </section>
+
+  <div class="calculator-section">
+    <div class="calculator-card">
+      <div class="calculator-header">
+        <h2>Calculate your earnings</h2>
+        <p>See how much you could earn each month</p>
+      </div>
+      <div class="calculator-grid">
+        <div class="form-group">
+          <label>Location</label>
+          <select id="location">
+            <option value="london">London</option>
+            <option value="manchester">Manchester</option>
+            <option value="birmingham">Birmingham</option>
+            <option value="other">Other city</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Space type</label>
+          <select id="spaceType">
+            <option value="driveway">Driveway</option>
+            <option value="garage">Garage</option>
+            <option value="parking">Parking space</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Availability</label>
+          <select id="availability">
+            <option value="7">Every day (7 days)</option>
+            <option value="5">Weekdays only (5 days)</option>
+            <option value="2">Weekends only (2 days)</option>
+          </select>
+        </div>
+      </div>
+      <div class="earnings-display">
+        <div class="earnings-label">Potential monthly earnings</div>
+        <div class="earnings-amount" id="earningsAmount">£200</div>
+        <div class="earnings-period">Based on average bookings in your area</div>
+      </div>
+    </div>
+  </div>
+
+  <section class="section benefits-section">
+    <div class="section-container">
+      <div class="section-header">
+        <div class="benefits-badge">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Trusted by 10,000+ owners
+        </div>
+        <h2>Why list with ParkaLot?</h2>
+        <p>Everything you need to start earning from your unused parking space</p>
+      </div>
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-icon"><img src="images/icons/money.svg" alt="Money"></div>
+          <h3>Passive income</h3>
+          <p>Your space earns money even when you're not using it. Average earnings are £100-300 per month.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><img src="images/icons/calendar.svg" alt="Calendar"></div>
+          <h3>You're in control</h3>
+          <p>Set your own prices and availability. Block dates whenever you need your space back.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><img src="images/icons/shield.svg" alt="Shield"></div>
+          <h3>Fully protected</h3>
+          <p>All bookings are covered by our £10 million insurance policy for complete peace of mind.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><img src="images/icons/download.svg" alt="Fast payouts"></div>
+          <h3>Quick payouts</h3>
+          <p>Get paid directly to your bank account within 3-5 days of each completed booking.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><img src="images/icons/smartwatch.svg" alt="Mobile"></div>
+          <h3>Manage anywhere</h3>
+          <p>Our app makes it easy to manage bookings, update availability, and track your earnings.</p>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><img src="images/icons/chat.svg" alt="Support"></div>
+          <h3>Great support</h3>
+          <p>Our friendly team is here to help you 7 days a week with any questions you might have.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section how-it-works">
+    <div class="section-container">
+      <div class="section-header">
+        <h2>How it works</h2>
+        <p>Start earning in 4 simple steps</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h4>List your space</h4>
+          <p>Add photos, set your price, and describe your space. It's free and takes just 5 minutes.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h4>Get bookings</h4>
+          <p>Drivers find and book your space. You can approve each booking or set it to auto-accept.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h4>Share access</h4>
+          <p>Provide access instructions to drivers. No need to meet them - it's all automated.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <h4>Get paid</h4>
+          <p>Money is transferred to your bank account automatically after each booking completes.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-container">
+      <div class="section-header">
+        <h2>What our space owners say</h2>
+        <p>Join thousands of happy earners across the UK</p>
+      </div>
+      <div class="testimonials-grid">
+        <div class="testimonial-card">
+          <div class="testimonial-rating">
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="testimonial-text">"I earn over £200 a month from my driveway while I'm at work. It's completely hassle-free and the app makes everything so easy!"</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">S</div>
+            <div class="author-info">
+              <div class="author-name">Sarah M.</div>
+              <div class="author-earning">Earns £240/month</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testimonial-rating">
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="testimonial-text">"Living near the station, my space is always in demand. Best decision I ever made - it's genuinely passive income."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">J</div>
+            <div class="author-info">
+              <div class="author-name">James T.</div>
+              <div class="author-earning">Earns £180/month</div>
+            </div>
+          </div>
+        </div>
+        <div class="testimonial-card">
+          <div class="testimonial-rating">
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="testimonial-text">"I rented out my garage space and now it pays for my car insurance every month. The setup was incredibly simple."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">L</div>
+            <div class="author-info">
+              <div class="author-name">Lisa P.</div>
+              <div class="author-earning">Earns £150/month</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-section">
+    <h2>Ready to start earning?</h2>
+    <p>It's free to list and takes just 5 minutes to get started</p>
+    <a href="index.html" class="btn btn-lg">List your space now</a>
+  </section>
+
+  <footer class="footer">
+    <p>&copy; 2026 ParkaLot. All rights reserved.</p>
+  </footer>
+
+  <script src="js/components/streamline-icons.js"></script>
+
+  <script>
+    function calculateEarnings() {
+      const location = document.getElementById('location').value;
+      const spaceType = document.getElementById('spaceType').value;
+      const availability = parseInt(document.getElementById('availability').value);
+
+      const baseRates = { london: 12, manchester: 8, birmingham: 7, other: 6 };
+      const typeMultiplier = { driveway: 1, garage: 1.3, parking: 0.9 };
+
+      const dailyRate = baseRates[location] * typeMultiplier[spaceType];
+      const monthlyEarnings = Math.round(dailyRate * availability * 4.3);
+
+      document.getElementById('earningsAmount').textContent = '£' + monthlyEarnings;
+    }
+
+    document.querySelectorAll('#location, #spaceType, #availability').forEach(el => {
+      el.addEventListener('change', calculateEarnings);
+    });
+
+    calculateEarnings();
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Hero animations
+    gsap.from('.hero-content h1', { duration: 0.8, y: 40, opacity: 0, ease: 'power3.out' });
+    gsap.from('.hero-content p', { duration: 0.8, y: 30, opacity: 0, delay: 0.15, ease: 'power3.out' });
+    gsap.from('.hero-content .btn', { duration: 0.6, y: 20, opacity: 0, delay: 0.3, ease: 'power2.out' });
+    gsap.from('.hero-features', { duration: 0.6, y: 20, opacity: 0, delay: 0.4, ease: 'power2.out' });
+    gsap.from('.hero-image', { duration: 1, x: 60, opacity: 0, delay: 0.2, ease: 'power3.out' });
+
+    // Calculator animation
+    gsap.from('.calculator-card', { duration: 0.8, y: 40, opacity: 0, delay: 0.5, ease: 'power3.out' });
+
+    // Benefits cards
+    gsap.from('.benefit-card', {
+      scrollTrigger: { trigger: '.benefits-grid', start: 'top 80%' },
+      duration: 0.5, y: 40, opacity: 0, stagger: 0.1, ease: 'power2.out'
+    });
+
+    // Steps
+    gsap.from('.step-card', {
+      scrollTrigger: { trigger: '.steps-grid', start: 'top 80%' },
+      duration: 0.5, y: 30, opacity: 0, stagger: 0.12, ease: 'power2.out'
+    });
+
+    // Testimonials
+    gsap.from('.testimonial-card', {
+      scrollTrigger: { trigger: '.testimonials-grid', start: 'top 80%' },
+      duration: 0.5, y: 40, opacity: 0, stagger: 0.1, ease: 'power2.out'
+    });
+
+    // Section headers
+    gsap.utils.toArray('.section-header').forEach(header => {
+      gsap.from(header, {
+        scrollTrigger: { trigger: header, start: 'top 85%' },
+        duration: 0.6, y: 30, opacity: 0, ease: 'power2.out'
+      });
+    });
+  </script>
+</body>
+</html>

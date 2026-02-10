@@ -37,6 +37,7 @@ require '../app/models/ActivityLogDAO.php';
 require '../app/utils/SimplePDF.php';
 require '../app/utils/CSRFProtection.php';
 require '../config/vehicle_api.php';
+require '../app/services/TfLParkingService.php';
 
 $db = Database::connect();
 
@@ -47,7 +48,21 @@ $route = $_GET['route'] ?? null;
 $path = $route ? ('/' . ltrim((string)$route, '/')) : ($_SERVER['PATH_INFO'] ?? '/');
 
 // Define routes that don't require authentication or session check
-$publicRoutes = ['/login', '/register', '/garages', '/recommendations', '/job_application', '/csrf-token', '/password/request-reset', '/password/reset', '/vehicles/public-check'];
+$publicRoutes = [
+    '/login', '/register', '/garages', '/recommendations', '/job_application',
+    '/csrf-token', '/password/request-reset', '/password/reset', '/vehicles/public-check',
+    '/london-parking', '/london-parking/search', '/london-parking/nearby', '/london-parking/ev-chargers',
+    '/parking/live-activity',
+    // New API endpoints
+    '/trustpilot/reviews', '/trustpilot/stats', '/trustpilot/widget',
+    '/flights/status', '/flights/search', '/flights/airport', '/flights/airports',
+    '/pexels/images', '/pexels/hero',
+    '/api/status',
+    // Customer spaces and payments (search is public)
+    '/spaces', '/spaces/detail', '/spaces/calculate-price',
+    '/payment/config', '/payment/webhook',
+    '/airport-booking/calculate'
+];
 
 // Check session timeout only for authenticated routes
 if (!in_array($path, $publicRoutes) && isset($_SESSION['user_id'])) {
@@ -132,7 +147,720 @@ switch ($path) {
             echo json_encode(["error" => "Unable to load garages"]);
         }
         break;
-    
+
+    // =====================================================
+    // TfL London Parking API Routes (Real-time availability)
+    // =====================================================
+    case '/london-parking':
+        // Get all London car parks with real-time availability
+        try {
+            $tflService = new TfLParkingService();
+
+            // Check if specific car park ID requested
+            $carParkId = $_GET['id'] ?? null;
+
+            if ($carParkId) {
+                $carPark = $tflService->getCarPark($carParkId);
+                if ($carPark) {
+                    echo json_encode([
+                        'success' => true,
+                        'carPark' => $carPark
+                    ]);
+                } else {
+                    http_response_code(404);
+                    echo json_encode([
+                        'success' => false,
+                        'error' => 'Car park not found'
+                    ]);
+                }
+            } else {
+                $carParks = $tflService->getAllCarParks();
+                echo json_encode([
+                    'success' => true,
+                    'count' => count($carParks),
+                    'carParks' => $carParks,
+                    'source' => 'Transport for London Unified API',
+                    'documentation' => 'https://api.tfl.gov.uk/'
+                ]);
+            }
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch London parking data'
+            ]);
+        }
+        break;
+
+    case '/london-parking/search':
+        // Search car parks by location name
+        try {
+            $query = $_GET['q'] ?? $_GET['query'] ?? null;
+
+            if (!$query) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Search query required. Use ?q=location'
+                ]);
+                break;
+            }
+
+            $tflService = new TfLParkingService();
+            $results = $tflService->searchCarParks($query);
+
+            echo json_encode([
+                'success' => true,
+                'query' => $query,
+                'count' => count($results),
+                'carParks' => $results
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Search failed'
+            ]);
+        }
+        break;
+
+    case '/london-parking/nearby':
+        // Find car parks near coordinates
+        try {
+            $lat = isset($_GET['lat']) ? floatval($_GET['lat']) : null;
+            $lon = isset($_GET['lon']) ? floatval($_GET['lon']) : null;
+            $radius = isset($_GET['radius']) ? intval($_GET['radius']) : 500;
+
+            if ($lat === null || $lon === null) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Latitude and longitude required. Use ?lat=51.5&lon=-0.1'
+                ]);
+                break;
+            }
+
+            // Validate London area (roughly)
+            if ($lat < 51.2 || $lat > 51.8 || $lon < -0.6 || $lon > 0.4) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Coordinates must be within Greater London area'
+                ]);
+                break;
+            }
+
+            $tflService = new TfLParkingService();
+            $results = $tflService->getNearbyCarParks($lat, $lon, $radius);
+
+            echo json_encode([
+                'success' => true,
+                'location' => ['lat' => $lat, 'lon' => $lon],
+                'radius' => $radius,
+                'count' => count($results),
+                'carParks' => $results
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Nearby search failed'
+            ]);
+        }
+        break;
+
+    case '/london-parking/ev-chargers':
+        // Get EV charge connector availability
+        try {
+            $tflService = new TfLParkingService();
+            $connectors = $tflService->getChargeConnectors();
+
+            echo json_encode([
+                'success' => true,
+                'count' => count($connectors),
+                'chargeConnectors' => $connectors
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch EV charger data'
+            ]);
+        }
+        break;
+
+    // =====================================================
+    // TRUSTPILOT API Routes (Reviews & Ratings)
+    // =====================================================
+    case '/trustpilot/reviews':
+        // Get Trustpilot reviews (public)
+        try {
+            require_once '../app/services/TrustpilotService.php';
+            $trustpilotService = new TrustpilotService($db);
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+            $reviews = $trustpilotService->getReviews($limit);
+
+            echo json_encode([
+                'success' => true,
+                'reviews' => $reviews['reviews'] ?? [],
+                'total' => $reviews['total'] ?? 0,
+                'isMockData' => $trustpilotService->isUsingMockData()
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch reviews'
+            ]);
+        }
+        break;
+
+    case '/trustpilot/stats':
+        // Get Trustpilot business statistics (public)
+        try {
+            require_once '../app/services/TrustpilotService.php';
+            $trustpilotService = new TrustpilotService($db);
+            $stats = $trustpilotService->getBusinessStats();
+
+            echo json_encode([
+                'success' => true,
+                'stats' => $stats,
+                'isMockData' => $trustpilotService->isUsingMockData()
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch business stats'
+            ]);
+        }
+        break;
+
+    case '/trustpilot/widget':
+        // Get combined widget data (reviews + stats) (public)
+        try {
+            require_once '../app/services/TrustpilotService.php';
+            $trustpilotService = new TrustpilotService($db);
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
+            $widgetData = $trustpilotService->getWidgetData($limit);
+
+            echo json_encode([
+                'success' => true,
+                'data' => $widgetData
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch widget data'
+            ]);
+        }
+        break;
+
+    // =====================================================
+    // FLIGHT API Routes (Airport Flight Tracking)
+    // =====================================================
+    case '/flights/status':
+        // Get status for a specific flight (public)
+        try {
+            require_once '../app/services/FlightApiService.php';
+            $flightService = new FlightApiService($db);
+            $flightNumber = $_GET['flight'] ?? $_GET['number'] ?? null;
+
+            if (!$flightNumber) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Flight number is required'
+                ]);
+                break;
+            }
+
+            $flight = $flightService->getFlightStatus($flightNumber);
+
+            if ($flight) {
+                echo json_encode([
+                    'success' => true,
+                    'flight' => $flight,
+                    'isMockData' => $flightService->isUsingMockData()
+                ]);
+            } else {
+                http_response_code(404);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Flight not found'
+                ]);
+            }
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch flight status'
+            ]);
+        }
+        break;
+
+    case '/flights/search':
+        // Search for flights (public)
+        try {
+            require_once '../app/services/FlightApiService.php';
+            $flightService = new FlightApiService($db);
+            $query = $_GET['q'] ?? $_GET['query'] ?? null;
+
+            if (!$query) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Search query is required'
+                ]);
+                break;
+            }
+
+            $results = $flightService->searchFlights($query);
+
+            echo json_encode([
+                'success' => true,
+                'results' => $results['results'] ?? [],
+                'total' => $results['total'] ?? 0,
+                'query' => $query,
+                'isMockData' => $flightService->isUsingMockData()
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Flight search failed'
+            ]);
+        }
+        break;
+
+    case '/flights/airport':
+        // Get departures/arrivals for an airport (public)
+        try {
+            require_once '../app/services/FlightApiService.php';
+            $flightService = new FlightApiService($db);
+
+            $airportCode = $_GET['code'] ?? 'LHR';
+            $type = $_GET['type'] ?? 'departures';
+            $date = $_GET['date'] ?? null;
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
+
+            if ($type === 'arrivals') {
+                $flights = $flightService->getAirportArrivals($airportCode, $date, $limit);
+            } else {
+                $flights = $flightService->getAirportDepartures($airportCode, $date, $limit);
+            }
+
+            if (isset($flights['error'])) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => $flights['error'],
+                    'validCodes' => $flights['validCodes'] ?? null
+                ]);
+            } else {
+                echo json_encode([
+                    'success' => true,
+                    'data' => $flights,
+                    'isMockData' => $flights['isMockData'] ?? $flightService->isUsingMockData()
+                ]);
+            }
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch airport flights'
+            ]);
+        }
+        break;
+
+    case '/flights/airports':
+        // Get list of London airports (public)
+        try {
+            require_once '../app/services/FlightApiService.php';
+            $flightService = new FlightApiService($db);
+            $airports = $flightService->getLondonAirports();
+
+            echo json_encode([
+                'success' => true,
+                'airports' => $airports
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch airports'
+            ]);
+        }
+        break;
+
+    // =====================================================
+    // LIVE PARKING BOOKING Routes
+    // =====================================================
+    case '/parking/live-booking':
+        // Create a live parking booking (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        try {
+            $tflService = new TfLParkingService();
+            $tflService->setDatabase($db);
+
+            $carParkId = $data->carParkId ?? $data->car_park_id ?? null;
+            if (!$carParkId) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Car park ID is required'
+                ]);
+                break;
+            }
+
+            $bookingDetails = [
+                'vehicleRegistration' => $data->vehicleRegistration ?? $data->vehicle_registration ?? null,
+                'checkInTime' => $data->checkInTime ?? $data->check_in_time ?? null,
+                'checkOutTime' => $data->checkOutTime ?? $data->check_out_time ?? null,
+                'totalPrice' => $data->totalPrice ?? $data->total_price ?? null,
+                'specialRequests' => $data->specialRequests ?? $data->special_requests ?? null,
+                'flightNumber' => $data->flightNumber ?? $data->flight_number ?? null
+            ];
+
+            $result = $tflService->createLiveBooking($_SESSION['user_id'], $carParkId, $bookingDetails);
+
+            // Link to flight if provided
+            if (!isset($result['error']) && !empty($bookingDetails['flightNumber'])) {
+                require_once '../app/services/FlightApiService.php';
+                $flightService = new FlightApiService($db);
+                $flight = $flightService->getFlightStatus($bookingDetails['flightNumber']);
+                if ($flight) {
+                    $result['linkedFlight'] = $flight;
+                }
+            }
+
+            if (isset($result['error'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => $result['error']]);
+            } else {
+                echo json_encode(['success' => true, 'booking' => $result]);
+            }
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to create booking'
+            ]);
+        }
+        break;
+
+    case '/parking/live-activity':
+        // Get anonymized live booking activity (public)
+        // Shows recent booking activity without revealing personal details
+        try {
+            $limit = isset($_GET['limit']) ? min((int)$_GET['limit'], 20) : 10;
+            $airport = isset($_GET['airport']) ? strtoupper($_GET['airport']) : null;
+
+            // Query recent bookings with anonymized data
+            $sql = "
+                SELECT
+                    b.booking_id,
+                    b.booking_reference,
+                    b.tfl_car_park_id,
+                    b.booking_status,
+                    b.check_in_time,
+                    b.expected_check_out,
+                    b.created_at,
+                    CONCAT(SUBSTRING(b.vehicle_registration, 1, 2), '** ***') as vehicle_hint,
+                    f.flight_number,
+                    f.airline_name,
+                    f.departure_airport,
+                    f.arrival_airport,
+                    f.departure_city,
+                    f.arrival_city,
+                    f.scheduled_departure
+                FROM parking_bookings_live b
+                LEFT JOIN flight_data f ON b.flight_id = f.flight_id
+                WHERE b.booking_status IN ('confirmed', 'checked_in', 'active', 'completed')
+                  AND b.created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+            ";
+
+            if ($airport) {
+                $sql .= " AND (f.departure_airport = :airport OR f.arrival_airport = :airport)";
+            }
+
+            $sql .= " ORDER BY b.created_at DESC LIMIT :limit";
+
+            $stmt = $db->prepare($sql);
+            if ($airport) {
+                $stmt->bindValue(':airport', $airport, PDO::PARAM_STR);
+            }
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Get statistics
+            $statsStmt = $db->query("
+                SELECT
+                    COUNT(*) as total_today,
+                    SUM(CASE WHEN booking_status IN ('checked_in', 'active') THEN 1 ELSE 0 END) as currently_parked,
+                    SUM(CASE WHEN booking_status = 'confirmed' THEN 1 ELSE 0 END) as upcoming
+                FROM parking_bookings_live
+                WHERE created_at >= CURDATE()
+            ");
+            $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'success' => true,
+                'bookings' => $bookings,
+                'stats' => [
+                    'totalToday' => (int)($stats['total_today'] ?? 0),
+                    'currentlyParked' => (int)($stats['currently_parked'] ?? 0),
+                    'upcoming' => (int)($stats['upcoming'] ?? 0)
+                ],
+                'count' => count($bookings)
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch live activity'
+            ]);
+        }
+        break;
+
+    case '/parking/active':
+        // Get user's active parking bookings (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        try {
+            $tflService = new TfLParkingService();
+            $tflService->setDatabase($db);
+            $bookings = $tflService->getActiveBookings($_SESSION['user_id']);
+
+            echo json_encode([
+                'success' => true,
+                'bookings' => $bookings,
+                'count' => count($bookings)
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch active bookings'
+            ]);
+        }
+        break;
+
+    case '/parking/history':
+        // Get user's booking history (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        try {
+            $tflService = new TfLParkingService();
+            $tflService->setDatabase($db);
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+            $history = $tflService->getBookingHistory($_SESSION['user_id'], $limit);
+
+            echo json_encode([
+                'success' => true,
+                'bookings' => $history,
+                'count' => count($history)
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch booking history'
+            ]);
+        }
+        break;
+
+    case '/parking/checkin':
+        // Check in to parking (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        try {
+            $tflService = new TfLParkingService();
+            $tflService->setDatabase($db);
+
+            $bookingRef = $data->bookingReference ?? $data->booking_reference ?? $data->qrCode ?? null;
+            if (!$bookingRef) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Booking reference or QR code is required'
+                ]);
+                break;
+            }
+
+            $result = $tflService->checkIn($bookingRef);
+
+            if (isset($result['error'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => $result['error']]);
+            } else {
+                echo json_encode(['success' => true, 'checkIn' => $result]);
+            }
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Check-in failed'
+            ]);
+        }
+        break;
+
+    case '/parking/checkout':
+        // Check out from parking (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        try {
+            $tflService = new TfLParkingService();
+            $tflService->setDatabase($db);
+
+            $bookingRef = $data->bookingReference ?? $data->booking_reference ?? null;
+            if (!$bookingRef) {
+                http_response_code(400);
+                echo json_encode([
+                    'success' => false,
+                    'error' => 'Booking reference is required'
+                ]);
+                break;
+            }
+
+            $result = $tflService->checkOut($bookingRef);
+
+            if (isset($result['error'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => $result['error']]);
+            } else {
+                echo json_encode(['success' => true, 'checkOut' => $result]);
+            }
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Check-out failed'
+            ]);
+        }
+        break;
+
+    // =====================================================
+    // PEXELS Images API Routes
+    // =====================================================
+    case '/pexels/images':
+        // Get images from Pexels (public)
+        try {
+            require_once '../app/services/PexelsService.php';
+            $pexelsService = new PexelsService($db);
+
+            $query = $_GET['query'] ?? $_GET['q'] ?? null;
+            $category = $_GET['category'] ?? null;
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 6;
+
+            if ($category) {
+                $images = $pexelsService->getImagesByCategory($category, $limit);
+            } elseif ($query) {
+                $images = $pexelsService->searchImages($query, $limit);
+            } else {
+                $images = $pexelsService->getCuratedImages($limit);
+            }
+
+            echo json_encode([
+                'success' => true,
+                'data' => $images,
+                'isMockData' => $pexelsService->isUsingMockData()
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch images'
+            ]);
+        }
+        break;
+
+    case '/pexels/hero':
+        // Get hero image for a specific page (public)
+        try {
+            require_once '../app/services/PexelsService.php';
+            $pexelsService = new PexelsService($db);
+            $page = $_GET['page'] ?? 'home';
+            $image = $pexelsService->getHeroImage($page);
+
+            echo json_encode([
+                'success' => true,
+                'image' => $image,
+                'isMockData' => $pexelsService->isUsingMockData()
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to fetch hero image'
+            ]);
+        }
+        break;
+
+    // =====================================================
+    // API Status Route
+    // =====================================================
+    case '/api/status':
+        // Get API configuration status (public)
+        try {
+            require_once '../config/api_keys.php';
+
+            echo json_encode([
+                'success' => true,
+                'apis' => getApiStatus(),
+                'timestamp' => date('c')
+            ]);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Failed to get API status'
+            ]);
+        }
+        break;
+
     case '/invoice':
         if (!isset($_SESSION['user_id'])) {
             http_response_code(401);
@@ -199,7 +927,195 @@ switch ($path) {
         $currentUser['csrf_token'] = CSRFProtection::getToken();
         echo json_encode($currentUser);
         break;
-    
+
+    case '/profile':
+        // User profile management
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(["error" => "Not authenticated"]);
+            break;
+        }
+
+        $userId = $_SESSION['user_id'];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Get full profile
+            try {
+                $stmt = $db->prepare("
+                    SELECT u.user_id, u.full_name, u.email, u.role, u.email_verified, u.created_at,
+                           u.stripe_customer_id, u.stripe_connect_id,
+                           (SELECT COUNT(*) FROM customer_spaces WHERE owner_id = u.user_id) as space_count
+                    FROM users u WHERE u.user_id = ?
+                ");
+                $stmt->execute([$userId]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if ($user) {
+                    echo json_encode([
+                        'success' => true,
+                        'profile' => [
+                            'user_id' => $user['user_id'],
+                            'full_name' => $user['full_name'],
+                            'email' => $user['email'],
+                            'role' => $user['role'],
+                            'email_verified' => (bool)$user['email_verified'],
+                            'created_at' => $user['created_at'],
+                            'is_space_owner' => $user['space_count'] > 0,
+                            'has_stripe_connect' => !empty($user['stripe_connect_id'])
+                        ]
+                    ]);
+                } else {
+                    echo json_encode(['error' => 'Profile not found']);
+                }
+            } catch (PDOException $e) {
+                echo json_encode(['error' => 'Database error']);
+            }
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+            // Update profile
+            $updates = [];
+            $params = [];
+
+            if (!empty($data->full_name)) {
+                $updates[] = "full_name = ?";
+                $params[] = trim($data->full_name);
+            }
+
+            if (empty($updates)) {
+                echo json_encode(['error' => 'No fields to update']);
+                break;
+            }
+
+            $params[] = $userId;
+
+            try {
+                $stmt = $db->prepare("UPDATE users SET " . implode(", ", $updates) . " WHERE user_id = ?");
+                $stmt->execute($params);
+                echo json_encode(['success' => true, 'message' => 'Profile updated']);
+            } catch (PDOException $e) {
+                echo json_encode(['error' => 'Failed to update profile']);
+            }
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+            // Delete account
+            try {
+                // Check for active bookings
+                $stmt = $db->prepare("
+                    SELECT COUNT(*) FROM customer_space_bookings
+                    WHERE (renter_id = ? OR owner_id = ?) AND booking_status IN ('pending', 'confirmed', 'active')
+                ");
+                $stmt->execute([$userId, $userId]);
+                if ($stmt->fetchColumn() > 0) {
+                    echo json_encode(['error' => 'Cannot delete account with active bookings']);
+                    break;
+                }
+
+                // Delete user (cascades will handle related data)
+                $stmt = $db->prepare("DELETE FROM users WHERE user_id = ?");
+                $stmt->execute([$userId]);
+                session_destroy();
+                echo json_encode(['success' => true, 'message' => 'Account deleted']);
+            } catch (PDOException $e) {
+                echo json_encode(['error' => 'Failed to delete account']);
+            }
+        }
+        break;
+
+    case '/profile/password':
+        // Change password
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(["error" => "Not authenticated"]);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        if (empty($data->current_password) || empty($data->new_password)) {
+            echo json_encode(['error' => 'Current and new password required']);
+            break;
+        }
+
+        if (strlen($data->new_password) < 8) {
+            echo json_encode(['error' => 'Password must be at least 8 characters']);
+            break;
+        }
+
+        try {
+            $stmt = $db->prepare("SELECT password_hash FROM users WHERE user_id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user || !password_verify($data->current_password, $user['password_hash'])) {
+                echo json_encode(['error' => 'Current password is incorrect']);
+                break;
+            }
+
+            $newHash = password_hash($data->new_password, PASSWORD_DEFAULT);
+            $stmt = $db->prepare("UPDATE users SET password_hash = ? WHERE user_id = ?");
+            $stmt->execute([$newHash, $_SESSION['user_id']]);
+
+            echo json_encode(['success' => true, 'message' => 'Password changed successfully']);
+        } catch (PDOException $e) {
+            echo json_encode(['error' => 'Failed to change password']);
+        }
+        break;
+
+    case '/profile/stripe-status':
+        // Get Stripe Connect status
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(["error" => "Not authenticated"]);
+            break;
+        }
+
+        try {
+            $stmt = $db->prepare("SELECT stripe_connect_id FROM users WHERE user_id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user || empty($user['stripe_connect_id'])) {
+                echo json_encode(['success' => true, 'stripe_status' => null]);
+                break;
+            }
+
+            // In production, would check Stripe API for account status
+            // For now, assume complete if connect_id exists
+            echo json_encode([
+                'success' => true,
+                'stripe_status' => 'complete',
+                'bank_last4' => '4242' // Would come from Stripe API
+            ]);
+        } catch (PDOException $e) {
+            echo json_encode(['error' => 'Failed to get status']);
+        }
+        break;
+
+    case '/profile/stripe-onboard':
+        // Start Stripe Connect onboarding
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(["error" => "Not authenticated"]);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        // In production, would create Stripe Connect account and return onboarding URL
+        // For demo, return a placeholder
+        echo json_encode([
+            'success' => true,
+            'message' => 'Stripe Connect onboarding would start here',
+            'onboarding_url' => null // Would be Stripe URL in production
+        ]);
+        break;
+
     case '/csrf-token':
         // Get CSRF token (for AJAX requests)
         echo json_encode([
@@ -1604,21 +2520,25 @@ switch ($path) {
         try {
             // Revenue by month (last 6 months)
             $revenueStmt = $db->query(
-                "SELECT DATE_FORMAT(created_at, '%b') as month, SUM(amount) as total
+                "SELECT DATE_FORMAT(MIN(created_at), '%b') as month, SUM(amount) as total
                  FROM payments
                  WHERE payment_status = 'succeeded'
                  AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
                  GROUP BY YEAR(created_at), MONTH(created_at)
-                 ORDER BY created_at"
+                 ORDER BY MIN(created_at)"
             );
             $revenueData = $revenueStmt->fetchAll(PDO::FETCH_ASSOC);
-            $revenueLabels = array_column($revenueData, 'month') ?: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-            $revenueValues = array_map('floatval', array_column($revenueData, 'total')) ?: [0,0,0,0,0,0];
+            $revenueLabelsRaw = array_column($revenueData, 'month');
+            $revenueValuesRaw = array_column($revenueData, 'total');
 
-            // Reservation status counts
-            $activeRes = $db->query("SELECT COUNT(*) FROM reservations WHERE status = 'active'")->fetchColumn();
-            $completedRes = $db->query("SELECT COUNT(*) FROM reservations WHERE status = 'completed'")->fetchColumn();
-            $cancelledRes = $db->query("SELECT COUNT(*) FROM reservations WHERE status = 'cancelled'")->fetchColumn();
+            // Ensure we have valid arrays with numeric data
+            $revenueLabels = !empty($revenueLabelsRaw) ? array_values($revenueLabelsRaw) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+            $revenueValues = !empty($revenueValuesRaw) ? array_map('floatval', array_values($revenueValuesRaw)) : [0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+
+            // Reservation status counts - ensure integers
+            $activeRes = (int)$db->query("SELECT COUNT(*) FROM reservations WHERE status = 'active'")->fetchColumn();
+            $completedRes = (int)$db->query("SELECT COUNT(*) FROM reservations WHERE status = 'completed'")->fetchColumn();
+            $cancelledRes = (int)$db->query("SELECT COUNT(*) FROM reservations WHERE status = 'cancelled'")->fetchColumn();
 
             // Vehicle inspections by type
             $vehicleStmt = $db->query(
@@ -1660,18 +2580,18 @@ switch ($path) {
             echo json_encode([
                 'success' => true,
                 'revenue_labels' => $revenueLabels,
-                'revenue_data' => $revenueValues,
-                'reservation_status' => [(int)$activeRes, (int)$completedRes, (int)$cancelledRes],
+                'revenue_data' => array_values($revenueValues),
+                'reservation_status' => [$activeRes, $completedRes, $cancelledRes],
                 'vehicle_labels' => ['Routine', 'Entry', 'Exit', 'Damage', 'Random'],
-                'vehicle_data' => $vehicleValues,
+                'vehicle_data' => array_values($vehicleValues),
                 'department_labels' => ['Management', 'Operations', 'Customer Service', 'Software Systems'],
-                'department_data' => $deptValues,
+                'department_data' => array_values($deptValues),
                 'report_labels' => ['Daily', 'Weekly', 'Monthly'],
-                'report_data' => $reportValues
+                'report_data' => array_values($reportValues)
             ]);
         } catch (Exception $e) {
             error_log("Analytics error: " . $e->getMessage());
-            echo json_encode(['error' => 'Failed to load analytics']);
+            echo json_encode(['success' => false, 'error' => 'Failed to load analytics: ' . $e->getMessage()]);
         }
         break;
 
@@ -2032,18 +2952,42 @@ switch ($path) {
         // Update job application status - Manager only
         if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'manager') {
             http_response_code(403);
-            echo json_encode(['error' => 'Access denied']);
+            echo json_encode(['success' => false, 'error' => 'Access denied']);
             break;
         }
 
-        if (empty($data->application_id) || empty($data->status)) {
-            echo json_encode(['error' => 'Application ID and status required']);
+        // Validate input - use isset to handle 0 values correctly
+        if (!isset($data->application_id) || !isset($data->status)) {
+            echo json_encode(['success' => false, 'error' => 'Application ID and status required']);
+            break;
+        }
+
+        $applicationId = (int)$data->application_id;
+        $status = trim($data->status);
+
+        if ($applicationId <= 0) {
+            echo json_encode(['success' => false, 'error' => 'Invalid application ID']);
+            break;
+        }
+
+        // Validate status matches ENUM values in database
+        $validStatuses = ['pending', 'reviewing', 'interviewed', 'accepted', 'rejected'];
+        if (!in_array($status, $validStatuses)) {
+            echo json_encode(['success' => false, 'error' => 'Invalid status. Must be one of: ' . implode(', ', $validStatuses)]);
             break;
         }
 
         try {
-            $stmt = $db->prepare("UPDATE job_applications SET status = ? WHERE application_id = ?");
-            $stmt->execute([$data->status, $data->application_id]);
+            // Check if application exists
+            $checkStmt = $db->prepare("SELECT application_id FROM job_applications WHERE application_id = ?");
+            $checkStmt->execute([$applicationId]);
+            if (!$checkStmt->fetch()) {
+                echo json_encode(['success' => false, 'error' => 'Application not found']);
+                break;
+            }
+
+            $stmt = $db->prepare("UPDATE job_applications SET status = ?, reviewed_by = ?, reviewed_at = NOW() WHERE application_id = ?");
+            $stmt->execute([$status, $_SESSION['user_id'], $applicationId]);
 
             // Log activity
             $logStmt = $db->prepare(
@@ -2052,14 +2996,14 @@ switch ($path) {
             );
             $logStmt->execute([
                 $_SESSION['user_id'],
-                "Updated application ID {$data->application_id} to {$data->status}",
+                "Updated application ID {$applicationId} to {$status}",
                 $_SERVER['REMOTE_ADDR'] ?? 'unknown'
             ]);
 
             echo json_encode(['success' => true, 'message' => 'Application status updated']);
         } catch (Exception $e) {
             error_log("Update application error: " . $e->getMessage());
-            echo json_encode(['error' => 'Failed to update application']);
+            echo json_encode(['success' => false, 'error' => 'Failed to update application: ' . $e->getMessage()]);
         }
         break;
 
@@ -2372,6 +3316,628 @@ switch ($path) {
         } catch (Exception $e) {
             error_log("Password reset error: " . $e->getMessage());
             echo json_encode(['error' => 'Failed to reset password']);
+        }
+        break;
+
+    // =====================================================
+    // CUSTOMER SPACE SHARING ENDPOINTS
+    // =====================================================
+
+    case '/spaces':
+        // Search or create customer spaces
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Public search for spaces
+            $filters = [
+                'city' => $_GET['city'] ?? null,
+                'postcode' => $_GET['postcode'] ?? null,
+                'max_price_hour' => $_GET['max_price'] ?? null,
+                'space_type' => $_GET['type'] ?? null,
+                'latitude' => $_GET['lat'] ?? null,
+                'longitude' => $_GET['lng'] ?? null,
+                'radius' => $_GET['radius'] ?? 10,
+                'limit' => $_GET['limit'] ?? 20,
+                'offset' => $_GET['offset'] ?? 0
+            ];
+
+            if (!empty($_GET['amenities'])) {
+                $filters['amenities'] = explode(',', $_GET['amenities']);
+            }
+
+            echo json_encode($spaceController->search(array_filter($filters)));
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Create a new space listing (authenticated)
+            if (!isset($_SESSION['user_id'])) {
+                http_response_code(401);
+                echo json_encode(['error' => 'Not authenticated']);
+                break;
+            }
+            echo json_encode($spaceController->create($data, $_SESSION['user_id']));
+        } else {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+        }
+        break;
+
+    case '/spaces/detail':
+        // Get single space details
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+
+        $spaceId = $_GET['id'] ?? null;
+        if (!$spaceId) {
+            echo json_encode(['error' => 'Space ID required']);
+            break;
+        }
+
+        echo json_encode($spaceController->get((int)$spaceId));
+        break;
+
+    case '/my-spaces':
+        // Get owner's spaces (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            echo json_encode($spaceController->getMySpaces($_SESSION['user_id']));
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Update a space
+            $spaceId = $_GET['id'] ?? $data->space_id ?? null;
+            if (!$spaceId) {
+                echo json_encode(['error' => 'Space ID required']);
+                break;
+            }
+            echo json_encode($spaceController->update((int)$spaceId, $data, $_SESSION['user_id']));
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+            // Delete a space
+            $spaceId = $_GET['id'] ?? $data->space_id ?? null;
+            if (!$spaceId) {
+                echo json_encode(['error' => 'Space ID required']);
+                break;
+            }
+            echo json_encode($spaceController->delete((int)$spaceId, $_SESSION['user_id']));
+        }
+        break;
+
+    case '/my-earnings':
+        // Get owner's earnings summary (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        echo json_encode($spaceController->getEarnings($_SESSION['user_id']));
+        break;
+
+    case '/spaces/book':
+        // Book a customer space (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        echo json_encode($spaceController->book($data, $_SESSION['user_id']));
+        break;
+
+    case '/spaces/calculate-price':
+        // Calculate booking price for a space
+        $spaceId = $_GET['space_id'] ?? null;
+        $startTime = $_GET['start_time'] ?? null;
+        $endTime = $_GET['end_time'] ?? null;
+
+        if (!$spaceId || !$startTime || !$endTime) {
+            echo json_encode(['error' => 'space_id, start_time, and end_time required']);
+            break;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        echo json_encode($spaceController->calculatePrice((int)$spaceId, $startTime, $endTime));
+        break;
+
+    case '/my-space-bookings':
+        // Get bookings as renter or owner (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+
+        $role = $_GET['role'] ?? 'renter'; // 'renter' or 'owner'
+        $status = $_GET['status'] ?? null;
+
+        if ($role === 'owner') {
+            echo json_encode($spaceController->getSpaceBookings($_SESSION['user_id'], $status));
+        } else {
+            echo json_encode($spaceController->getMyBookings($_SESSION['user_id'], $status));
+        }
+        break;
+
+    case '/spaces/cancel-booking':
+        // Cancel a space booking (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        if (empty($data->booking_id)) {
+            echo json_encode(['error' => 'Booking ID required']);
+            break;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        echo json_encode($spaceController->cancelBooking(
+            (int)$data->booking_id,
+            $_SESSION['user_id'],
+            $data->reason ?? null
+        ));
+        break;
+
+    case '/spaces/toggle-pause':
+        // Pause/resume a space listing (authenticated owner)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        if (empty($data->space_id)) {
+            echo json_encode(['error' => 'Space ID required']);
+            break;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        echo json_encode($spaceController->togglePause(
+            (int)$data->space_id,
+            $_SESSION['user_id'],
+            $data->pause ?? true
+        ));
+        break;
+
+    case '/spaces/upload-photos':
+        // Upload photos for a space listing (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        if (empty($_FILES['photos'])) {
+            echo json_encode(['error' => 'No photos provided']);
+            break;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        $spaceId = isset($_POST['space_id']) ? (int)$_POST['space_id'] : null;
+        echo json_encode($spaceController->uploadPhotos(
+            $_FILES['photos'],
+            $_SESSION['user_id'],
+            $spaceId
+        ));
+        break;
+
+    case '/spaces/delete-photo':
+        // Delete a photo from a space (authenticated owner)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        if (empty($data->space_id) || empty($data->photo_url)) {
+            echo json_encode(['error' => 'Space ID and photo URL required']);
+            break;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        echo json_encode($spaceController->deletePhoto(
+            (int)$data->space_id,
+            $_SESSION['user_id'],
+            $data->photo_url
+        ));
+        break;
+
+    case '/spaces/gallery':
+        // Get public gallery of spaces with photos
+        $limit = isset($_GET['limit']) ? min((int)$_GET['limit'], 50) : 20;
+        $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+        $since = $_GET['since'] ?? null;
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        $spaces = $spaceController->getGallerySpaces($limit, $offset, $since);
+
+        echo json_encode([
+            'success' => true,
+            'spaces' => $spaces,
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+        break;
+
+    case '/earnings/by-space':
+        // Get earnings breakdown by space (authenticated owner)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        echo json_encode([
+            'success' => true,
+            'spaces' => $spaceController->getEarningsBySpace($_SESSION['user_id'])
+        ]);
+        break;
+
+    case '/earnings/by-period':
+        // Get earnings by time period (authenticated owner)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        $period = $_GET['period'] ?? 'month';
+        if (!in_array($period, ['week', 'month', 'year'])) {
+            $period = 'month';
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        echo json_encode([
+            'success' => true,
+            'period' => $period,
+            'data' => $spaceController->getEarningsByPeriod($_SESSION['user_id'], $period)
+        ]);
+        break;
+
+    case '/earnings/payouts':
+        // Get payout history (authenticated owner)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        $status = $_GET['status'] ?? null;
+        if ($status && !in_array($status, ['pending', 'processing', 'completed', 'failed'])) {
+            $status = null;
+        }
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        echo json_encode([
+            'success' => true,
+            'payouts' => $spaceController->getPayoutHistory($_SESSION['user_id'], $status)
+        ]);
+        break;
+
+    case '/earnings/bookings':
+        // Get owner's booking history (authenticated owner)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        $limit = isset($_GET['limit']) ? min((int)$_GET['limit'], 50) : 20;
+        $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
+
+        require_once '../app/controllers/CustomerSpaceController.php';
+        $spaceController = new CustomerSpaceController($db);
+        echo json_encode([
+            'success' => true,
+            'bookings' => $spaceController->getOwnerBookingHistory($_SESSION['user_id'], $limit, $offset)
+        ]);
+        break;
+
+    // =====================================================
+    // STRIPE PAYMENT ENDPOINTS
+    // =====================================================
+
+    case '/payment/config':
+        // Get public Stripe configuration (no auth required)
+        require_once '../app/controllers/PaymentController.php';
+        $paymentController = new PaymentController($db);
+        echo json_encode($paymentController->getConfig());
+        break;
+
+    case '/payment/create-intent':
+        // Create a payment intent (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        require_once '../app/controllers/PaymentController.php';
+        $paymentController = new PaymentController($db);
+
+        // Use space payment method if booking a customer space
+        if (($data->booking_type ?? '') === 'customer_space' && !empty($data->space_id)) {
+            echo json_encode($paymentController->createSpacePayment($data, $_SESSION['user_id']));
+        } else {
+            echo json_encode($paymentController->createIntent($data, $_SESSION['user_id']));
+        }
+        break;
+
+    case '/payment/confirm':
+        // Confirm a payment (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        require_once '../app/controllers/PaymentController.php';
+        $paymentController = new PaymentController($db);
+        echo json_encode($paymentController->confirmPayment($data, $_SESSION['user_id']));
+        break;
+
+    case '/payment/webhook':
+        // Stripe webhook handler (no auth - verified by signature)
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        $payload = file_get_contents('php://input');
+        $signature = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
+
+        require_once '../app/controllers/PaymentController.php';
+        $paymentController = new PaymentController($db);
+        $result = $paymentController->handleWebhook($payload, $signature);
+
+        if (isset($result['error'])) {
+            http_response_code(400);
+        }
+        echo json_encode($result);
+        break;
+
+    case '/payment/refund':
+        // Request a refund (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Method not allowed']);
+            break;
+        }
+
+        require_once '../app/controllers/PaymentController.php';
+        $paymentController = new PaymentController($db);
+        echo json_encode($paymentController->refund($data, $_SESSION['user_id']));
+        break;
+
+    case '/payment/history':
+        // Get payment history (authenticated)
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        require_once '../app/controllers/PaymentController.php';
+        $paymentController = new PaymentController($db);
+        echo json_encode($paymentController->getHistory(
+            $_SESSION['user_id'],
+            (int)($_GET['limit'] ?? 20),
+            (int)($_GET['offset'] ?? 0)
+        ));
+        break;
+
+    // =====================================================
+    // AIRPORT BOOKING ENDPOINTS
+    // =====================================================
+
+    case '/airport-booking':
+        // Airport parking booking
+        if (!isset($_SESSION['user_id'])) {
+            http_response_code(401);
+            echo json_encode(['error' => 'Not authenticated']);
+            break;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Get user's airport bookings
+            try {
+                $stmt = $db->prepare("
+                    SELECT pb.*, g.garage_name, g.location
+                    FROM parking_bookings_live pb
+                    LEFT JOIN garages g ON pb.garage_id = g.garage_id
+                    WHERE pb.user_id = ? AND pb.airport_code IS NOT NULL
+                    ORDER BY pb.created_at DESC
+                ");
+                $stmt->execute([$_SESSION['user_id']]);
+                $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                echo json_encode([
+                    'success' => true,
+                    'bookings' => $bookings,
+                    'count' => count($bookings)
+                ]);
+            } catch (Exception $e) {
+                error_log("Airport booking fetch error: " . $e->getMessage());
+                echo json_encode(['error' => 'Failed to fetch bookings']);
+            }
+        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Create airport booking
+            $required = ['airport_code', 'start_time', 'end_time'];
+            foreach ($required as $field) {
+                if (empty($data->$field)) {
+                    echo json_encode(['error' => "Missing required field: {$field}"]);
+                    break 2;
+                }
+            }
+
+            try {
+                // Calculate price
+                $start = new DateTime($data->start_time);
+                $end = new DateTime($data->end_time);
+                $days = max(1, $end->diff($start)->days);
+                $dailyRate = $data->daily_rate ?? 15.00;
+                $totalPrice = $days * $dailyRate;
+
+                $stmt = $db->prepare("
+                    INSERT INTO parking_bookings_live (
+                        user_id, garage_id, booking_reference, vehicle_reg, start_time, end_time,
+                        total_price, booking_status, payment_status,
+                        airport_code, terminal, outbound_flight_number, return_flight_number, return_date,
+                        vehicle_make, vehicle_model, vehicle_color, stripe_payment_intent_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+
+                $bookingRef = 'AP' . strtoupper(substr($data->airport_code, 0, 3)) . '-' . time() . '-' . rand(1000, 9999);
+
+                $stmt->execute([
+                    $_SESSION['user_id'],
+                    $data->garage_id ?? null,
+                    $bookingRef,
+                    $data->vehicle_reg ?? null,
+                    $data->start_time,
+                    $data->end_time,
+                    $totalPrice,
+                    strtoupper($data->airport_code),
+                    $data->terminal ?? null,
+                    $data->outbound_flight ?? null,
+                    $data->return_flight ?? null,
+                    $data->return_date ?? null,
+                    $data->vehicle_make ?? null,
+                    $data->vehicle_model ?? null,
+                    $data->vehicle_color ?? null,
+                    $data->stripe_payment_intent_id ?? null
+                ]);
+
+                $bookingId = $db->lastInsertId();
+
+                echo json_encode([
+                    'success' => true,
+                    'booking_id' => $bookingId,
+                    'booking_reference' => $bookingRef,
+                    'total_price' => $totalPrice,
+                    'days' => $days,
+                    'message' => 'Airport parking booking created'
+                ]);
+            } catch (Exception $e) {
+                error_log("Airport booking create error: " . $e->getMessage());
+                echo json_encode(['error' => 'Failed to create booking']);
+            }
+        }
+        break;
+
+    case '/airport-booking/calculate':
+        // Calculate airport parking price
+        $startTime = $_GET['start_time'] ?? null;
+        $endTime = $_GET['end_time'] ?? null;
+        $airportCode = $_GET['airport_code'] ?? 'LHR';
+
+        if (!$startTime || !$endTime) {
+            echo json_encode(['error' => 'start_time and end_time required']);
+            break;
+        }
+
+        try {
+            $start = new DateTime($startTime);
+            $end = new DateTime($endTime);
+            $days = max(1, $end->diff($start)->days);
+
+            // Airport-specific rates
+            $rates = [
+                'LHR' => 18.00,
+                'LGW' => 15.00,
+                'STN' => 12.00,
+                'LTN' => 10.00,
+                'LCY' => 20.00
+            ];
+
+            $dailyRate = $rates[strtoupper($airportCode)] ?? 15.00;
+            $subtotal = $days * $dailyRate;
+            $serviceFee = round($subtotal * 0.10, 2); // 10% service fee
+            $total = $subtotal + $serviceFee;
+
+            echo json_encode([
+                'success' => true,
+                'price' => [
+                    'days' => $days,
+                    'daily_rate' => $dailyRate,
+                    'subtotal' => $subtotal,
+                    'service_fee' => $serviceFee,
+                    'total' => $total,
+                    'currency' => 'GBP'
+                ]
+            ]);
+        } catch (Exception $e) {
+            echo json_encode(['error' => 'Invalid date format']);
         }
         break;
 

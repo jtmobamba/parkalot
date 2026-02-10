@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find Parking - ParkaLot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Nunito', sans-serif; color: #333; background: #f9fafb; }
+
+    .navbar {
+      background: white;
+      padding: 15px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .navbar-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .navbar-brand span { font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 700; color: #2563eb; }
+    .navbar-menu { display: flex; gap: 30px; list-style: none; align-items: center; }
+    .navbar-menu a { color: #333; text-decoration: none; font-weight: 600; font-size: 15px; }
+    .navbar-menu a:hover { color: #2563eb; }
+    .btn { padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; font-size: 15px; border: none; }
+    .btn-primary { background: #2563eb; color: white; }
+    .btn-primary:hover { background: #1d4ed8; }
+
+    .page-container {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      height: calc(100vh - 70px);
+    }
+
+    .search-sidebar {
+      background: white;
+      padding: 20px;
+      overflow-y: auto;
+      border-right: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .search-header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 22px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-header h1 img {
+      width: 28px;
+      height: 28px;
+    }
+
+    .search-form { display: flex; flex-direction: column; gap: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: #374151; }
+    .form-group input, .form-group select {
+      padding: 12px 14px;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 15px;
+    }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #2563eb; }
+
+    .location-input-wrapper {
+      position: relative;
+    }
+    .location-input-wrapper input {
+      padding-left: 40px;
+    }
+    .location-input-wrapper .location-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+    }
+    .use-my-location {
+      background: none;
+      border: none;
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 5px;
+    }
+    .use-my-location:hover { text-decoration: underline; }
+
+    .search-btn {
+      width: 100%;
+      padding: 14px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .search-btn:hover { background: #1d4ed8; }
+    .search-btn img { width: 20px; height: 20px; filter: brightness(0) invert(1); }
+
+    .filters-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
+    .filters-section h3 { font-size: 14px; margin-bottom: 12px; color: #374151; }
+    .filter-group { margin-bottom: 12px; }
+    .filter-group label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; padding: 6px 0; }
+    .filter-group input[type="checkbox"] { width: 16px; height: 16px; accent-color: #2563eb; }
+
+    .results-list {
+      flex: 1;
+      overflow-y: auto;
+      margin-top: 15px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 15px;
+    }
+
+    .results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .results-header h2 { font-size: 16px; font-weight: 600; }
+    .results-count { color: #6b7280; font-size: 13px; }
+
+    .parking-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 2px solid transparent;
+    }
+    .parking-card:hover, .parking-card.active {
+      border-color: #2563eb;
+      box-shadow: 0 4px 15px rgba(37,99,235,0.2);
+    }
+    .parking-card.active {
+      background: #eff6ff;
+    }
+
+    .card-content {
+      padding: 15px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .card-header h3 { font-size: 15px; font-weight: 600; }
+    .card-price {
+      font-family: 'Poppins', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #2563eb;
+    }
+    .card-price span { font-size: 12px; font-weight: 400; color: #6b7280; }
+
+    .card-location {
+      color: #6b7280;
+      font-size: 13px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .card-location img { width: 14px; height: 14px; }
+
+    .card-distance {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #f0fdf4;
+      color: #059669;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .card-features {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .feature-tag {
+      background: #f3f4f6;
+      color: #374151;
+      padding: 3px 8px;
+      border-radius: 15px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .card-rating {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+    }
+    .rating-stars { color: #f59e0b; }
+
+    .book-btn {
+      padding: 8px 16px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .book-btn:hover { background: #1d4ed8; }
+
+    .map-container {
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-controls {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .map-control-btn {
+      background: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .map-control-btn:hover { background: #f9fafb; }
+    .map-control-btn img { width: 16px; height: 16px; }
+    .map-control-btn.active { background: #2563eb; color: white; }
+    .map-control-btn.active img { filter: brightness(0) invert(1); }
+
+    .map-legend {
+      position: absolute;
+      bottom: 20px;
+      left: 15px;
+      background: white;
+      padding: 12px 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      font-size: 12px;
+      z-index: 10;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 5px;
+    }
+    .legend-item:last-child { margin-bottom: 0; }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .legend-dot.available { background: #10b981; }
+    .legend-dot.limited { background: #f59e0b; }
+    .legend-dot.user { background: #2563eb; }
+
+    .no-results {
+      text-align: center;
+      padding: 40px 20px;
+      color: #6b7280;
+    }
+    .no-results-icon { width: 60px; height: 60px; margin: 0 auto 15px; }
+    .no-results-icon img { width: 100%; height: 100%; object-fit: contain; }
+
+    /* Payment Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      max-width: 480px;
+      width: 95%;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(30px);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #6b7280;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover {
+      background: #f3f4f6;
+    }
+    .modal-body {
+      padding: 24px;
+    }
+    .booking-details {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .booking-details h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+    }
+    .booking-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    .booking-detail-row .label {
+      color: #6b7280;
+    }
+    .booking-detail-row.total {
+      border-top: 1px solid #e5e7eb;
+      margin-top: 8px;
+      padding-top: 12px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    #payment-container {
+      min-height: 200px;
+    }
+    .payment-success {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .payment-success-icon {
+      width: 80px;
+      height: 80px;
+      background: #dcfce7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+    }
+    .payment-success-icon svg {
+      width: 40px;
+      height: 40px;
+      color: #16a34a;
+    }
+    .payment-success h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+    }
+    .payment-success p {
+      color: #6b7280;
+      margin: 0 0 24px 0;
+    }
+    .payment-success .btn {
+      width: 100%;
+    }
+
+    /* Info Window Styles */
+    .gm-style-iw { padding: 5px; }
+    .info-window {
+      padding: 10px;
+      max-width: 250px;
+    }
+    .info-window h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+    .info-window p {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .info-window .price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2563eb;
+      margin-bottom: 10px;
+    }
+    .info-window .btn-row {
+      display: flex;
+      gap: 8px;
+    }
+    .info-window button {
+      flex: 1;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .info-window .directions-btn {
+      background: #f3f4f6;
+      border: none;
+      color: #374151;
+    }
+    .info-window .book-btn {
+      background: #2563eb;
+      border: none;
+      color: white;
+    }
+
+    @media (max-width: 992px) {
+      .page-container { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      .search-sidebar { max-height: 50vh; }
+      .map-container { min-height: 50vh; }
+    }
+
+    @media (max-width: 768px) {
+      .navbar-menu { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="home.html" class="navbar-brand"><span>ParkaLot</span></a>
+    <ul class="navbar-menu">
+      <li><a href="how-it-works.html">How it works</a></li>
+      <li><a href="rent-your-space.html">Rent out your space</a></li>
+      <li><a href="business.html">Business</a></li>
+      <li><a href="index.html">Login</a></li>
+      <li><a href="index.html" class="btn btn-primary">Sign up</a></li>
+    </ul>
+  </nav>
+
+  <div class="page-container">
+    <aside class="search-sidebar">
+      <div class="search-header">
+        <h1><img src="images/icons/location.svg" alt=""> Find Parking</h1>
+      </div>
+
+      <form class="search-form" id="searchForm">
+        <div class="form-group">
+          <label>Where do you want to park?</label>
+          <div class="location-input-wrapper">
+            <img src="images/icons/search.svg" alt="" class="location-icon">
+            <input type="text" id="locationInput" placeholder="Search location, postcode, or venue" autocomplete="off">
+          </div>
+          <button type="button" class="use-my-location" onclick="useMyLocation()">
+            <img src="images/icons/location.svg" alt="" style="width: 14px; height: 14px;"> Use my current location
+          </button>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label>Arriving</label>
+            <input type="datetime-local" id="arrivingInput">
+          </div>
+          <div class="form-group">
+            <label>Leaving</label>
+            <input type="datetime-local" id="leavingInput">
+          </div>
+        </div>
+        <button type="submit" class="search-btn">
+          <img src="images/icons/search.svg" alt=""> Search Parking
+        </button>
+      </form>
+
+      <div class="filters-section">
+        <h3>Filters</h3>
+        <div class="filter-group">
+          <label><input type="checkbox" checked> Covered parking</label>
+          <label><input type="checkbox" checked> CCTV</label>
+          <label><input type="checkbox"> EV charging</label>
+          <label><input type="checkbox"> 24/7 access</label>
+          <label><input type="checkbox"> Disabled access</label>
+        </div>
+
+        <h3>Max price per hour</h3>
+        <div class="form-group">
+          <select id="priceFilter">
+            <option value="0">Any price</option>
+            <option value="5">Under £5/hour</option>
+            <option value="10">Under £10/hour</option>
+            <option value="20">Under £20/hour</option>
+          </select>
+        </div>
+
+        <h3>Distance</h3>
+        <div class="form-group">
+          <select id="distanceFilter">
+            <option value="1">Within 1 mile</option>
+            <option value="2">Within 2 miles</option>
+            <option value="5" selected>Within 5 miles</option>
+            <option value="0">Any distance</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="results-list">
+        <div class="results-header">
+          <div>
+            <h2>Nearby Parking</h2>
+            <span class="results-count" id="resultsCount">Loading...</span>
+          </div>
+        </div>
+        <div id="resultsList">
+          <!-- Results will be loaded here -->
+        </div>
+      </div>
+    </aside>
+
+    <div class="map-container">
+      <div id="map"></div>
+
+      <div class="map-controls">
+        <button class="map-control-btn" id="listViewBtn" onclick="toggleView('list')">
+          <img src="images/icons/document.svg" alt=""> List View
+        </button>
+        <button class="map-control-btn active" id="mapViewBtn" onclick="toggleView('map')">
+          <img src="images/icons/map.svg" alt=""> Map View
+        </button>
+      </div>
+
+      <div class="map-legend">
+        <div class="legend-item">
+          <div class="legend-dot available"></div>
+          <span>Available spaces</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot limited"></div>
+          <span>Limited spaces</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot user"></div>
+          <span>Your location</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal-overlay" id="paymentModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Complete Booking</h2>
+        <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="booking-details" id="bookingDetails">
+          <!-- Populated dynamically -->
+        </div>
+        <div id="payment-container">
+          <!-- Stripe payment component mounts here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Streamline Icons -->
+  <script src="js/components/streamline-icons.js"></script>
+  <!-- Stripe Payment Component -->
+  <script src="js/components/stripe-payment.js"></script>
+
+  <script>
+    const API = "/api/index.php";
+    let map;
+    let markers = [];
+    let userMarker = null;
+    let userLocation = null;
+    let garages = [];
+    let autocomplete;
+    let infoWindow;
+    let selectedCardId = null;
+
+    // Default location (London)
+    const defaultLocation = { lat: 51.5074, lng: -0.1278 };
+
+    // Initialize Google Map
+    function initMap() {
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: defaultLocation,
+        zoom: 13,
+        styles: [
+          { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
+          { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] }
+        ],
+        mapTypeControl: false,
+        fullscreenControl: false,
+        streetViewControl: false
+      });
+
+      infoWindow = new google.maps.InfoWindow();
+
+      // Initialize Places Autocomplete
+      const input = document.getElementById('locationInput');
+      autocomplete = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: 'gb' },
+        fields: ['geometry', 'name', 'formatted_address']
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+          userLocation = {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng()
+          };
+          map.setCenter(userLocation);
+          map.setZoom(14);
+          setUserMarker(userLocation);
+          loadGarages();
+        }
+      });
+
+      // Check URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      const locationParam = urlParams.get('location');
+      if (locationParam) {
+        document.getElementById('locationInput').value = locationParam;
+        geocodeAddress(locationParam);
+      } else {
+        loadGarages();
+      }
+
+      // Set default dates
+      const now = new Date();
+      now.setMinutes(Math.ceil(now.getMinutes() / 30) * 30);
+      document.getElementById('arrivingInput').value = now.toISOString().slice(0, 16);
+      const later = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+      document.getElementById('leavingInput').value = later.toISOString().slice(0, 16);
+    }
+
+    // Geocode address
+    function geocodeAddress(address) {
+      const geocoder = new google.maps.Geocoder();
+      geocoder.geocode({ address: address + ', UK' }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+          userLocation = {
+            lat: results[0].geometry.location.lat(),
+            lng: results[0].geometry.location.lng()
+          };
+          map.setCenter(userLocation);
+          map.setZoom(14);
+          setUserMarker(userLocation);
+          loadGarages();
+        }
+      });
+    }
+
+    // Use current location
+    function useMyLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            userLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            map.setCenter(userLocation);
+            map.setZoom(14);
+            setUserMarker(userLocation);
+
+            // Reverse geocode to get address
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location: userLocation }, (results, status) => {
+              if (status === 'OK' && results[0]) {
+                document.getElementById('locationInput').value = results[0].formatted_address;
+              }
+            });
+
+            loadGarages();
+          },
+          (error) => {
+            alert('Unable to get your location. Please enter it manually.');
+          }
+        );
+      } else {
+        alert('Geolocation is not supported by your browser.');
+      }
+    }
+
+    // Set user marker
+    function setUserMarker(location) {
+      if (userMarker) {
+        userMarker.setMap(null);
+      }
+
+      userMarker = new google.maps.Marker({
+        position: location,
+        map: map,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 12,
+          fillColor: '#2563eb',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3
+        },
+        title: 'Your Location',
+        zIndex: 1000
+      });
+    }
+
+    // Calculate distance between two points
+    function calculateDistance(lat1, lng1, lat2, lng2) {
+      if (!lat1 || !lng1 || !lat2 || !lng2) return null;
+
+      const point1 = new google.maps.LatLng(lat1, lng1);
+      const point2 = new google.maps.LatLng(lat2, lng2);
+      const distanceMeters = google.maps.geometry.spherical.computeDistanceBetween(point1, point2);
+      return (distanceMeters / 1609.34).toFixed(1); // Convert to miles
+    }
+
+    // Load garages from API
+    async function loadGarages() {
+      const resultsList = document.getElementById('resultsList');
+      const resultsCount = document.getElementById('resultsCount');
+
+      try {
+        const res = await fetch(API + "?route=garages");
+        const data = await res.json();
+
+        if (data.garages && data.garages.length > 0) {
+          garages = data.garages.map(garage => {
+            // Generate coordinates if not available (for demo purposes)
+            if (!garage.latitude || !garage.longitude) {
+              garage.latitude = defaultLocation.lat + (Math.random() - 0.5) * 0.05;
+              garage.longitude = defaultLocation.lng + (Math.random() - 0.5) * 0.05;
+            }
+
+            // Calculate distance if user location is set
+            if (userLocation) {
+              garage.distance = calculateDistance(
+                userLocation.lat, userLocation.lng,
+                parseFloat(garage.latitude), parseFloat(garage.longitude)
+              );
+            }
+
+            return garage;
+          });
+
+          // Sort by distance if available
+          if (userLocation) {
+            garages.sort((a, b) => (parseFloat(a.distance) || 999) - (parseFloat(b.distance) || 999));
+          }
+
+          // Apply filters
+          const maxPrice = parseFloat(document.getElementById('priceFilter').value);
+          const maxDistance = parseFloat(document.getElementById('distanceFilter').value);
+
+          let filteredGarages = garages;
+          if (maxPrice > 0) {
+            filteredGarages = filteredGarages.filter(g => parseFloat(g.hourly_rate || g.price_per_hour || 5) <= maxPrice);
+          }
+          if (maxDistance > 0 && userLocation) {
+            filteredGarages = filteredGarages.filter(g => parseFloat(g.distance) <= maxDistance);
+          }
+
+          resultsCount.textContent = `${filteredGarages.length} spaces found`;
+
+          // Clear existing markers
+          clearMarkers();
+
+          // Render list and markers
+          renderList(filteredGarages);
+          addMarkers(filteredGarages);
+
+          // Fit bounds to show all markers
+          if (filteredGarages.length > 0 && !userLocation) {
+            const bounds = new google.maps.LatLngBounds();
+            filteredGarages.forEach(g => {
+              bounds.extend({ lat: parseFloat(g.latitude), lng: parseFloat(g.longitude) });
+            });
+            map.fitBounds(bounds);
+          }
+
+        } else {
+          resultsCount.textContent = '0 spaces found';
+          resultsList.innerHTML = `
+            <div class="no-results">
+              <div class="no-results-icon"><img src="images/icons/search.svg" alt="Search"></div>
+              <h3>No parking spaces found</h3>
+              <p>Try adjusting your search criteria</p>
+            </div>
+          `;
+        }
+      } catch (e) {
+        console.error("Failed to load garages:", e);
+        resultsCount.textContent = 'Error loading results';
+        resultsList.innerHTML = `
+          <div class="no-results">
+            <div class="no-results-icon"><img src="images/icons/notification.svg" alt="Warning"></div>
+            <h3>Unable to load parking spaces</h3>
+            <p>Please try again later</p>
+          </div>
+        `;
+      }
+    }
+
+    // Render parking list
+    function renderList(garageList) {
+      const resultsList = document.getElementById('resultsList');
+      const hasMap = typeof google !== 'undefined' && typeof google.maps !== 'undefined';
+
+      resultsList.innerHTML = garageList.map(garage => `
+        <div class="parking-card" id="card-${garage.garage_id}" onclick="${hasMap ? `selectGarage(${garage.garage_id})` : `bookSpace(${garage.garage_id})`}">
+          <div class="card-content">
+            <div class="card-header">
+              <h3>${garage.garage_name || garage.name}</h3>
+              <div class="card-price">£${parseFloat(garage.hourly_rate || garage.price_per_hour || 5).toFixed(2)}<span>/hr</span></div>
+            </div>
+            <div class="card-location">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              ${garage.location || garage.address || 'Location available on booking'}
+            </div>
+            ${garage.distance ? `<div class="card-distance">📍 ${garage.distance} miles away</div>` : ''}
+            <div class="card-features">
+              ${(garage.amenities || 'Covered,CCTV').split(',').slice(0, 3).map(a =>
+                `<span class="feature-tag">${a.trim()}</span>`
+              ).join('')}
+            </div>
+            <div class="card-footer">
+              <div class="card-rating">
+                <span class="rating-stars">★★★★★</span>
+                <span>(${Math.floor(Math.random() * 150) + 50})</span>
+              </div>
+              <button class="book-btn" onclick="event.stopPropagation(); bookSpace(${garage.garage_id})">Book Now</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Add markers to map
+    function addMarkers(garageList) {
+      garageList.forEach((garage, index) => {
+        const position = {
+          lat: parseFloat(garage.latitude),
+          lng: parseFloat(garage.longitude)
+        };
+
+        const marker = new google.maps.Marker({
+          position: position,
+          map: map,
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 10,
+            fillColor: garage.total_spaces > 10 ? '#10b981' : '#f59e0b',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2
+          },
+          title: garage.garage_name || garage.name,
+          garageId: garage.garage_id
+        });
+
+        marker.addListener('click', () => {
+          showInfoWindow(garage, marker);
+          selectGarage(garage.garage_id);
+        });
+
+        markers.push(marker);
+      });
+    }
+
+    // Show info window
+    function showInfoWindow(garage, marker) {
+      const content = `
+        <div class="info-window">
+          <h3>${garage.garage_name || garage.name}</h3>
+          <p>${garage.location || 'Location available'}</p>
+          <div class="price">£${parseFloat(garage.hourly_rate || garage.price_per_hour || 5).toFixed(2)}/hr</div>
+          <div class="btn-row">
+            <button class="directions-btn" onclick="getDirections(${garage.latitude}, ${garage.longitude})">
+              Directions
+            </button>
+            <button class="book-btn" onclick="bookSpace(${garage.garage_id})">
+              Book Now
+            </button>
+          </div>
+        </div>
+      `;
+
+      infoWindow.setContent(content);
+      infoWindow.open(map, marker);
+    }
+
+    // Clear all markers
+    function clearMarkers() {
+      markers.forEach(marker => marker.setMap(null));
+      markers = [];
+    }
+
+    // Select garage
+    function selectGarage(garageId) {
+      // Remove active class from all cards
+      document.querySelectorAll('.parking-card').forEach(card => {
+        card.classList.remove('active');
+      });
+
+      // Add active class to selected card
+      const card = document.getElementById(`card-${garageId}`);
+      if (card) {
+        card.classList.add('active');
+        card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      // Highlight marker
+      const garage = garages.find(g => g.garage_id == garageId);
+      if (garage) {
+        map.setCenter({ lat: parseFloat(garage.latitude), lng: parseFloat(garage.longitude) });
+        map.setZoom(16);
+
+        // Find and click the marker
+        const marker = markers.find(m => m.garageId == garageId);
+        if (marker) {
+          showInfoWindow(garage, marker);
+        }
+      }
+
+      selectedCardId = garageId;
+    }
+
+    // Get directions
+    function getDirections(lat, lng) {
+      const destination = `${lat},${lng}`;
+      let url;
+
+      if (userLocation) {
+        url = `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${destination}`;
+      } else {
+        url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
+      }
+
+      window.open(url, '_blank');
+    }
+
+    // Payment component instance
+    let stripePayment = null;
+    let currentBooking = null;
+
+    // Book space - show payment modal
+    async function bookSpace(garageId) {
+      // Check if user is logged in
+      const token = localStorage.getItem('parkalot_token') || sessionStorage.getItem('parkalot_token');
+      if (!token) {
+        // Redirect to login with return URL
+        window.location.href = `index.html?redirect=find-parking&garage=${garageId}`;
+        return;
+      }
+
+      // Find the garage
+      const garage = garages.find(g => g.garage_id == garageId);
+      if (!garage) {
+        alert('Parking space not found');
+        return;
+      }
+
+      // Get booking times
+      const arrivingInput = document.getElementById('arrivingInput');
+      const leavingInput = document.getElementById('leavingInput');
+      const startTime = new Date(arrivingInput.value);
+      const endTime = new Date(leavingInput.value);
+
+      if (endTime <= startTime) {
+        alert('Please select valid booking times');
+        return;
+      }
+
+      // Calculate duration and price
+      const hours = Math.ceil((endTime - startTime) / (1000 * 60 * 60));
+      const hourlyRate = parseFloat(garage.hourly_rate || garage.price_per_hour || 5);
+      const subtotal = hours * hourlyRate;
+      const serviceFee = subtotal * 0.10; // 10% service fee
+      const total = subtotal + serviceFee;
+
+      // Store booking details
+      currentBooking = {
+        garageId: garageId,
+        garageName: garage.garage_name || garage.name,
+        location: garage.location || garage.address || 'Location provided on confirmation',
+        startTime: startTime,
+        endTime: endTime,
+        hours: hours,
+        hourlyRate: hourlyRate,
+        subtotal: subtotal,
+        serviceFee: serviceFee,
+        total: total
+      };
+
+      // Show booking details
+      const bookingDetailsEl = document.getElementById('bookingDetails');
+      bookingDetailsEl.innerHTML = `
+        <h3>${currentBooking.garageName}</h3>
+        <div class="booking-detail-row">
+          <span class="label">Location</span>
+          <span>${currentBooking.location}</span>
+        </div>
+        <div class="booking-detail-row">
+          <span class="label">Arriving</span>
+          <span>${formatDateTime(currentBooking.startTime)}</span>
+        </div>
+        <div class="booking-detail-row">
+          <span class="label">Leaving</span>
+          <span>${formatDateTime(currentBooking.endTime)}</span>
+        </div>
+        <div class="booking-detail-row">
+          <span class="label">Duration</span>
+          <span>${currentBooking.hours} hour${currentBooking.hours > 1 ? 's' : ''}</span>
+        </div>
+        <div class="booking-detail-row">
+          <span class="label">Parking (${currentBooking.hours}h x £${currentBooking.hourlyRate.toFixed(2)})</span>
+          <span>£${currentBooking.subtotal.toFixed(2)}</span>
+        </div>
+        <div class="booking-detail-row">
+          <span class="label">Service Fee</span>
+          <span>£${currentBooking.serviceFee.toFixed(2)}</span>
+        </div>
+        <div class="booking-detail-row total">
+          <span>Total</span>
+          <span>£${currentBooking.total.toFixed(2)}</span>
+        </div>
+      `;
+
+      // Open modal
+      openPaymentModal();
+
+      // Initialize payment component
+      await initPayment();
+    }
+
+    // Format date time for display
+    function formatDateTime(date) {
+      return date.toLocaleDateString('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // Initialize Stripe payment
+    async function initPayment() {
+      // Clean up existing instance
+      if (stripePayment) {
+        stripePayment.destroy();
+      }
+
+      stripePayment = new StripePayment('payment-container', {
+        apiEndpoint: API,
+        onSuccess: handlePaymentSuccess,
+        onError: handlePaymentError,
+        onCancel: closePaymentModal
+      });
+
+      await stripePayment.init();
+
+      stripePayment.render({
+        spaceName: currentBooking.garageName,
+        location: currentBooking.location,
+        duration: `${currentBooking.hours} hour${currentBooking.hours > 1 ? 's' : ''}`,
+        dates: `${formatDateTime(currentBooking.startTime)} - ${formatDateTime(currentBooking.endTime)}`,
+        subtotal: currentBooking.subtotal,
+        serviceFee: currentBooking.serviceFee,
+        amount: currentBooking.total,
+        bookingType: 'garage',
+        spaceId: currentBooking.garageId
+      });
+    }
+
+    // Handle successful payment
+    function handlePaymentSuccess(result) {
+      const container = document.getElementById('payment-container');
+      container.innerHTML = `
+        <div class="payment-success">
+          <div class="payment-success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+          </div>
+          <h3>Booking Confirmed!</h3>
+          <p>Your parking space has been reserved. Check your email for confirmation details.</p>
+          <p style="font-size: 12px; color: #9ca3af; margin-bottom: 20px;">
+            Reference: ${result.paymentIntentId || 'DEMO-' + Date.now()}
+          </p>
+          <button class="btn btn-primary" onclick="goToDashboard()">View My Bookings</button>
+        </div>
+      `;
+
+      // Create reservation in backend
+      createReservation(result);
+    }
+
+    // Create reservation after payment
+    async function createReservation(paymentResult) {
+      try {
+        const token = localStorage.getItem('parkalot_token') || sessionStorage.getItem('parkalot_token');
+        const response = await fetch(API + '?route=reservations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            garage_id: currentBooking.garageId,
+            start_time: currentBooking.startTime.toISOString(),
+            end_time: currentBooking.endTime.toISOString(),
+            payment_intent_id: paymentResult.paymentIntentId,
+            amount_paid: currentBooking.total
+          })
+        });
+
+        const data = await response.json();
+        if (!data.success && !data.reservation) {
+          console.warn('Reservation creation returned:', data);
+        }
+      } catch (e) {
+        console.error('Failed to create reservation:', e);
+      }
+    }
+
+    // Handle payment error
+    function handlePaymentError(error) {
+      console.error('Payment failed:', error);
+      // Error is displayed by the Stripe component
+    }
+
+    // Open payment modal
+    function openPaymentModal() {
+      document.getElementById('paymentModal').classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    // Close payment modal
+    function closePaymentModal() {
+      document.getElementById('paymentModal').classList.remove('active');
+      document.body.style.overflow = '';
+
+      // Clean up payment component
+      if (stripePayment) {
+        stripePayment.destroy();
+        stripePayment = null;
+      }
+
+      // Reset container
+      document.getElementById('payment-container').innerHTML = '';
+      currentBooking = null;
+    }
+
+    // Go to dashboard
+    function goToDashboard() {
+      window.location.href = 'customer_dashboard.html';
+    }
+
+    // Close modal on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closePaymentModal();
+      }
+    });
+
+    // Close modal on backdrop click
+    document.getElementById('paymentModal').addEventListener('click', (e) => {
+      if (e.target.id === 'paymentModal') {
+        closePaymentModal();
+      }
+    });
+
+    // Toggle view (for mobile)
+    function toggleView(view) {
+      const sidebar = document.querySelector('.search-sidebar');
+      const mapContainer = document.querySelector('.map-container');
+
+      document.getElementById('listViewBtn').classList.toggle('active', view === 'list');
+      document.getElementById('mapViewBtn').classList.toggle('active', view === 'map');
+
+      if (window.innerWidth <= 992) {
+        if (view === 'list') {
+          sidebar.style.maxHeight = '70vh';
+          mapContainer.style.minHeight = '30vh';
+        } else {
+          sidebar.style.maxHeight = '30vh';
+          mapContainer.style.minHeight = '70vh';
+        }
+      }
+    }
+
+    // Form submission
+    document.getElementById('searchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const location = document.getElementById('locationInput').value;
+      if (location && !userLocation) {
+        geocodeAddress(location);
+      } else {
+        loadGarages();
+      }
+    });
+
+    // Filter changes
+    document.getElementById('priceFilter').addEventListener('change', loadGarages);
+    document.getElementById('distanceFilter').addEventListener('change', loadGarages);
+
+    // Fallback if Google Maps fails to load
+    window.gm_authFailure = function() {
+      document.getElementById('map').innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f3f4f6; flex-direction: column; padding: 40px; text-align: center;">
+          <img src="images/icons/map.svg" alt="Map" style="width: 80px; height: 80px; margin-bottom: 20px; opacity: 0.5;">
+          <h3 style="color: #374151; margin-bottom: 10px;">Map unavailable</h3>
+          <p style="color: #6b7280; max-width: 300px;">Please configure your Google Maps API key to enable the interactive map.</p>
+        </div>
+      `;
+    };
+
+    // Timeout fallback - if Google Maps doesn't load within 10 seconds
+    setTimeout(() => {
+      if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+        console.warn('Google Maps failed to load, using fallback');
+        initMapFallback();
+      }
+    }, 10000);
+
+    // Fallback map initialization without Google Maps
+    function initMapFallback() {
+      const mapEl = document.getElementById('map');
+      mapEl.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); flex-direction: column; padding: 40px; text-align: center;">
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.5" style="margin-bottom: 20px; opacity: 0.6;">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <h3 style="color: #1e40af; margin-bottom: 10px; font-family: 'Poppins', sans-serif;">Interactive Map</h3>
+          <p style="color: #6b7280; max-width: 300px; margin-bottom: 20px;">View parking locations on Google Maps</p>
+          <a href="https://www.google.com/maps/search/parking+near+me" target="_blank"
+             style="background: #2563eb; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+            Open in Google Maps
+          </a>
+        </div>
+      `;
+      // Still load garages for the list view
+      loadGaragesWithoutMap();
+    }
+
+    // Load garages without map features
+    async function loadGaragesWithoutMap() {
+      const resultsList = document.getElementById('resultsList');
+      const resultsCount = document.getElementById('resultsCount');
+
+      try {
+        const res = await fetch(API + "?route=garages");
+        const data = await res.json();
+
+        if (data.garages && data.garages.length > 0) {
+          garages = data.garages;
+          resultsCount.textContent = `${garages.length} spaces found`;
+          renderList(garages);
+        } else {
+          resultsCount.textContent = '0 spaces found';
+          resultsList.innerHTML = `
+            <div class="no-results">
+              <h3>No parking spaces found</h3>
+              <p>Try adjusting your search criteria</p>
+            </div>
+          `;
+        }
+      } catch (e) {
+        console.error("Failed to load garages:", e);
+        resultsCount.textContent = 'Error loading results';
+      }
+    }
+  </script>
+
+  <!-- Google Maps API - loaded after initMap is defined -->
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAZPNK-MFEiRSkwl-rJIo9t4BclB5MSODU&libraries=places,geometry&callback=initMap&loading=async"
+    onerror="initMapFallback()">
+  </script>
+
+  <!-- GSAP Animation Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <script>
+    // Animations
+    gsap.from('.search-sidebar', {
+      duration: 0.8,
+      x: -50,
+      opacity: 0,
+      ease: 'power3.out'
+    });
+
+    gsap.from('.search-header h1', {
+      duration: 0.6,
+      y: -20,
+      opacity: 0,
+      delay: 0.2,
+      ease: 'power2.out'
+    });
+
+    gsap.from('.form-group', {
+      duration: 0.5,
+      y: 20,
+      opacity: 0,
+      stagger: 0.1,
+      delay: 0.3,
+      ease: 'power2.out'
+    });
+
+    gsap.from('.map-controls', {
+      duration: 0.6,
+      x: 50,
+      opacity: 0,
+      delay: 0.5,
+      ease: 'power2.out'
+    });
+
+    gsap.from('.map-legend', {
+      duration: 0.6,
+      y: 50,
+      opacity: 0,
+      delay: 0.6,
+      ease: 'power2.out'
+    });
+  </script>
+</body>
+</html>
