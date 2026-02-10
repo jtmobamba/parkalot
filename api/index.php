@@ -4,6 +4,15 @@ ini_set('display_errors', '0');
 ini_set('display_startup_errors', '0');
 error_reporting(E_ALL);
 
+// Configure session cookie to be available site-wide
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => false,  // Set to true in production with HTTPS
+    'httponly' => true,
+    'samesite' => 'Lax'
+]);
 session_start();
 
 // Load security configuration
