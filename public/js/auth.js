@@ -121,8 +121,28 @@ if (loginForm) {
         return;
       }
 
-      /* Successful login */
-      window.location.href = "dashboard.html";
+      /* Successful login - check for redirect parameter */
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirect = urlParams.get('redirect');
+      if (redirect) {
+        // Build redirect URL with any additional params
+        let redirectUrl = redirect + '.html';
+        const garage = urlParams.get('garage');
+        const airport = urlParams.get('airport');
+        const space = urlParams.get('space');
+
+        const params = [];
+        if (garage) params.push('garage=' + garage);
+        if (airport) params.push('airport=' + airport);
+        if (space) params.push('space=' + space);
+
+        if (params.length > 0) {
+          redirectUrl += '?' + params.join('&');
+        }
+        window.location.href = redirectUrl;
+      } else {
+        window.location.href = "dashboard.html";
+      }
     } catch (err) {
       showMessage(loginMsg, "Server error. Please try again.");
       console.error(err);
@@ -327,9 +347,15 @@ async function verifyOTP() {
         "success"
       );
       
-      // Redirect to dashboard after successful verification
+      // Redirect after successful verification - check for redirect parameter
       setTimeout(() => {
-        window.location.href = "dashboard.html";
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirect = urlParams.get('redirect');
+        if (redirect) {
+          window.location.href = redirect + '.html';
+        } else {
+          window.location.href = "dashboard.html";
+        }
       }, 1500);
     }
   } catch (err) {
