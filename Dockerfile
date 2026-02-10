@@ -68,13 +68,16 @@ Alias /api /var/www/html/api' >> /etc/apache2/sites-available/000-default.conf
 # ─────────────────────────────────────────────────────────────────────
 
 # Copy custom PHP configuration
+# Note: session.cookie_secure = 0 for local HTTP development
+# Set to 1 in production with HTTPS
 RUN echo "upload_max_filesize = 10M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "post_max_size = 10M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "memory_limit = 256M" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/custom.ini \
     && echo "session.cookie_httponly = 1" >> /usr/local/etc/php/conf.d/custom.ini \
-    && echo "session.cookie_secure = 1" >> /usr/local/etc/php/conf.d/custom.ini \
-    && echo "session.use_strict_mode = 1" >> /usr/local/etc/php/conf.d/custom.ini
+    && echo "session.cookie_secure = 0" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "session.use_strict_mode = 1" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "session.cookie_samesite = Lax" >> /usr/local/etc/php/conf.d/custom.ini
 
 # Enable OPcache for production
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
