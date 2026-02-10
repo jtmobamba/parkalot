@@ -25,6 +25,7 @@ class CustomerSpaceDAO
     public function create(int $ownerId, array $data): array
     {
         try {
+            // Auto-approve spaces for demo - change to 'pending' for production with review
             $stmt = $this->db->prepare("
                 INSERT INTO customer_spaces (
                     owner_id, space_name, space_type, address_line1, address_line2,
@@ -32,7 +33,7 @@ class CustomerSpaceDAO
                     instructions, price_per_hour, price_per_day, min_booking_hours,
                     max_booking_days, photos, status
                 ) VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending'
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active'
                 )
             ");
 
@@ -60,7 +61,7 @@ class CustomerSpaceDAO
                 return [
                     'success' => true,
                     'space_id' => $this->db->lastInsertId(),
-                    'message' => 'Space listing created and pending approval'
+                    'message' => 'Space listing created and is now live!'
                 ];
             }
 
