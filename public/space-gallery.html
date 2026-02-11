@@ -20,6 +20,8 @@
     .btn-primary:hover { background: #1d4ed8; }
     .btn-success { background: #10b981; color: white; }
     .btn-success:hover { background: #059669; }
+    .btn-secondary { background: #e5e7eb; color: #374151; }
+    .btn-secondary:hover { background: #d1d5db; }
 
     .hero-section {
       background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
@@ -151,6 +153,18 @@
       color: #6b7280;
     }
 
+    .card-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .card-actions .btn {
+      flex: 1;
+      padding: 10px 16px;
+      font-size: 14px;
+      text-align: center;
+    }
+
     .load-more {
       display: block;
       margin: 40px auto;
@@ -182,10 +196,182 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Booking Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: translateY(20px);
+      transition: transform 0.3s;
+    }
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 20px;
+      margin: 0;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #6b7280;
+      padding: 0;
+      line-height: 1;
+    }
+    .modal-close:hover { color: #374151; }
+    .modal-body {
+      padding: 24px;
+    }
+
+    .space-preview {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .space-preview-image {
+      width: 100px;
+      height: 80px;
+      border-radius: 8px;
+      object-fit: cover;
+      background: #f3f4f6;
+    }
+    .space-preview-info h3 {
+      font-size: 16px;
+      margin: 0 0 4px 0;
+    }
+    .space-preview-info p {
+      font-size: 14px;
+      color: #6b7280;
+      margin: 0;
+    }
+    .space-preview-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #2563eb;
+      margin-top: 4px;
+    }
+
+    .booking-form-group {
+      margin-bottom: 16px;
+    }
+    .booking-form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    .booking-form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .booking-form-group input:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+    .booking-form-row {
+      display: flex;
+      gap: 12px;
+    }
+    .booking-form-row .booking-form-group {
+      flex: 1;
+    }
+
+    .booking-summary {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+    }
+    .booking-summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    .booking-summary-row.total {
+      border-top: 1px solid #e5e7eb;
+      margin-top: 8px;
+      padding-top: 12px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    #payment-container {
+      min-height: 100px;
+    }
+
+    .payment-success {
+      text-align: center;
+      padding: 30px 20px;
+    }
+    .payment-success-icon {
+      width: 70px;
+      height: 70px;
+      background: #dcfce7;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .payment-success-icon svg {
+      width: 36px;
+      height: 36px;
+      color: #16a34a;
+    }
+    .payment-success h3 {
+      font-size: 20px;
+      margin: 0 0 8px 0;
+    }
+    .payment-success p {
+      color: #6b7280;
+      margin: 0 0 20px 0;
+    }
+
     @media (max-width: 768px) {
       .hero-section h1 { font-size: 28px; }
       .gallery-grid { grid-template-columns: 1fr; }
       .filters-section { flex-direction: column; }
+      .space-preview { flex-direction: column; }
+      .space-preview-image { width: 100%; height: 150px; }
     }
   </style>
 </head>
@@ -193,7 +379,6 @@
 
 <nav class="navbar">
   <a href="home.html" class="navbar-brand">
-    <img src="images/logo.svg" alt="ParkaLot" height="40">
     <span>ParkaLot</span>
   </a>
   <ul class="navbar-menu">
@@ -254,6 +439,49 @@
   </button>
 </div>
 
+<!-- Booking Modal -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Book Parking Space</h2>
+      <button class="modal-close" onclick="closeBookingModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="space-preview" id="spacePreview">
+        <!-- Populated dynamically -->
+      </div>
+
+      <div id="bookingForm">
+        <div class="booking-form-row">
+          <div class="booking-form-group">
+            <label>Start Date & Time</label>
+            <input type="datetime-local" id="startDateTime">
+          </div>
+          <div class="booking-form-group">
+            <label>End Date & Time</label>
+            <input type="datetime-local" id="endDateTime">
+          </div>
+        </div>
+
+        <div class="booking-summary" id="bookingSummary" style="display: none;">
+          <!-- Populated dynamically -->
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%;" id="proceedToPaymentBtn" onclick="proceedToPayment()">
+          Proceed to Payment
+        </button>
+      </div>
+
+      <div id="payment-container" style="display: none;">
+        <!-- Stripe payment component mounts here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stripe Payment Component -->
+<script src="js/components/stripe-payment.js"></script>
+
 <script>
   const API = "/api/index.php";
   let allSpaces = [];
@@ -263,6 +491,9 @@
   let lastTimestamp = null;
   let pollingInterval = null;
   let filterTimeout = null;
+  let selectedSpace = null;
+  let currentBooking = null;
+  let stripePayment = null;
 
   // Amenity display names
   const amenityNames = {
@@ -405,14 +636,12 @@
   function createSpaceCard(space, isNew = false) {
     const card = document.createElement('div');
     card.className = 'gallery-card' + (isNew ? ' new' : '');
-    card.onclick = () => window.location.href = `find-parking.html?space=${space.space_id}`;
 
     const photo = space.photos && space.photos.length > 0 ? space.photos[0] : null;
     const rating = parseFloat(space.average_rating) || 0;
     const stars = rating > 0 ? '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating)) : 'No reviews';
 
     const amenities = space.amenities || [];
-    const amenityTags = amenities.slice(0, 3).map(a => amenityNames[a] || a).join('');
 
     card.innerHTML = `
       ${photo ?
@@ -431,10 +660,275 @@
             ${amenities.slice(0, 4).map(a => `<span class="amenity-tag">${amenityNames[a] || a}</span>`).join('')}
           </div>
         ` : ''}
+        <div class="card-actions">
+          <button class="btn btn-primary" onclick="event.stopPropagation(); openBookingModal(${space.space_id})">Purchase Parking</button>
+        </div>
       </div>
     `;
 
     return card;
+  }
+
+  // Open booking modal
+  async function openBookingModal(spaceId) {
+    // Check authentication
+    try {
+      const authRes = await fetch(API + '?route=me', { credentials: 'same-origin' });
+      if (!authRes.ok) {
+        window.location.href = `index.html?redirect=space-gallery&space=${spaceId}`;
+        return;
+      }
+    } catch (e) {
+      window.location.href = `index.html?redirect=space-gallery&space=${spaceId}`;
+      return;
+    }
+
+    // Find the space
+    selectedSpace = allSpaces.find(s => s.space_id === spaceId);
+    if (!selectedSpace) {
+      alert('Space not found');
+      return;
+    }
+
+    // Populate space preview
+    const preview = document.getElementById('spacePreview');
+    const photo = selectedSpace.photos && selectedSpace.photos.length > 0 ? selectedSpace.photos[0] : null;
+    preview.innerHTML = `
+      ${photo ?
+        `<img class="space-preview-image" src="${photo}" alt="${selectedSpace.space_name}">` :
+        '<div class="space-preview-image" style="display:flex;align-items:center;justify-content:center;font-size:32px;">🅿️</div>'
+      }
+      <div class="space-preview-info">
+        <h3>${selectedSpace.space_name}</h3>
+        <p>📍 ${selectedSpace.city}${selectedSpace.postcode ? ', ' + selectedSpace.postcode : ''}</p>
+        <div class="space-preview-price">£${parseFloat(selectedSpace.price_per_hour).toFixed(2)}/hour</div>
+      </div>
+    `;
+
+    // Set default dates (now + 1 hour)
+    const now = new Date();
+    const startDate = new Date(now.getTime() + 60 * 60 * 1000);
+    const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+
+    document.getElementById('startDateTime').value = formatDateTimeLocal(startDate);
+    document.getElementById('endDateTime').value = formatDateTimeLocal(endDate);
+
+    // Reset form state
+    document.getElementById('bookingForm').style.display = 'block';
+    document.getElementById('payment-container').style.display = 'none';
+    document.getElementById('bookingSummary').style.display = 'none';
+
+    // Open modal
+    document.getElementById('bookingModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    // Update summary on date change
+    document.getElementById('startDateTime').onchange = updateBookingSummary;
+    document.getElementById('endDateTime').onchange = updateBookingSummary;
+
+    updateBookingSummary();
+  }
+
+  // Format date for datetime-local input
+  function formatDateTimeLocal(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  // Update booking summary
+  function updateBookingSummary() {
+    const startInput = document.getElementById('startDateTime').value;
+    const endInput = document.getElementById('endDateTime').value;
+
+    if (!startInput || !endInput || !selectedSpace) {
+      document.getElementById('bookingSummary').style.display = 'none';
+      return;
+    }
+
+    const startTime = new Date(startInput);
+    const endTime = new Date(endInput);
+
+    if (endTime <= startTime) {
+      document.getElementById('bookingSummary').style.display = 'none';
+      return;
+    }
+
+    const hours = Math.ceil((endTime - startTime) / (1000 * 60 * 60));
+    const hourlyRate = parseFloat(selectedSpace.price_per_hour);
+    const subtotal = hours * hourlyRate;
+    const serviceFee = subtotal * 0.10;
+    const total = subtotal + serviceFee;
+
+    currentBooking = {
+      spaceId: selectedSpace.space_id,
+      spaceName: selectedSpace.space_name,
+      location: `${selectedSpace.city}${selectedSpace.postcode ? ', ' + selectedSpace.postcode : ''}`,
+      startTime: startTime,
+      endTime: endTime,
+      hours: hours,
+      hourlyRate: hourlyRate,
+      subtotal: subtotal,
+      serviceFee: serviceFee,
+      total: total
+    };
+
+    const summary = document.getElementById('bookingSummary');
+    summary.style.display = 'block';
+    summary.innerHTML = `
+      <div class="booking-summary-row">
+        <span>Duration</span>
+        <span>${hours} hour${hours > 1 ? 's' : ''}</span>
+      </div>
+      <div class="booking-summary-row">
+        <span>Parking (${hours}h × £${hourlyRate.toFixed(2)})</span>
+        <span>£${subtotal.toFixed(2)}</span>
+      </div>
+      <div class="booking-summary-row">
+        <span>Service Fee (10%)</span>
+        <span>£${serviceFee.toFixed(2)}</span>
+      </div>
+      <div class="booking-summary-row total">
+        <span>Total</span>
+        <span>£${total.toFixed(2)}</span>
+      </div>
+    `;
+  }
+
+  // Proceed to payment
+  async function proceedToPayment() {
+    if (!currentBooking) {
+      alert('Please select valid booking times');
+      return;
+    }
+
+    // Hide booking form, show payment
+    document.getElementById('bookingForm').style.display = 'none';
+    document.getElementById('payment-container').style.display = 'block';
+
+    // Initialize Stripe payment
+    if (stripePayment) {
+      stripePayment.destroy();
+    }
+
+    stripePayment = new StripePayment('payment-container', {
+      apiEndpoint: API,
+      onSuccess: handlePaymentSuccess,
+      onError: handlePaymentError,
+      onCancel: handlePaymentCancel
+    });
+
+    await stripePayment.init();
+
+    stripePayment.render({
+      spaceName: currentBooking.spaceName,
+      location: currentBooking.location,
+      duration: `${currentBooking.hours} hour${currentBooking.hours > 1 ? 's' : ''}`,
+      dates: `${formatDateTime(currentBooking.startTime)} - ${formatDateTime(currentBooking.endTime)}`,
+      subtotal: currentBooking.subtotal,
+      serviceFee: currentBooking.serviceFee,
+      amount: currentBooking.total,
+      bookingType: 'customer_space',
+      spaceId: currentBooking.spaceId
+    });
+  }
+
+  // Format date time for display
+  function formatDateTime(date) {
+    return date.toLocaleDateString('en-GB', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  // Handle successful payment
+  function handlePaymentSuccess(result) {
+    document.getElementById('payment-container').innerHTML = `
+      <div class="payment-success">
+        <div class="payment-success-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+        </div>
+        <h3>Booking Confirmed!</h3>
+        <p>Your parking space has been reserved. Check your email for confirmation details.</p>
+        <p style="font-size: 12px; color: #9ca3af; margin-bottom: 20px;">
+          Reference: ${result.paymentIntentId || 'DEMO-' + Date.now()}
+        </p>
+        <button class="btn btn-primary" onclick="goToDashboard()">View My Bookings</button>
+        <button class="btn btn-secondary" style="margin-top: 10px;" onclick="closeBookingModal()">Continue Browsing</button>
+      </div>
+    `;
+
+    // Create booking in backend
+    createSpaceBooking(result);
+  }
+
+  // Create space booking after payment
+  async function createSpaceBooking(paymentResult) {
+    try {
+      const response = await fetch(API + '?route=spaces/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          space_id: currentBooking.spaceId,
+          start_time: currentBooking.startTime.toISOString(),
+          end_time: currentBooking.endTime.toISOString(),
+          payment_intent_id: paymentResult.paymentIntentId,
+          total_price: currentBooking.total
+        })
+      });
+
+      const data = await response.json();
+      if (!data.success) {
+        console.warn('Booking creation returned:', data);
+      }
+    } catch (e) {
+      console.error('Failed to create booking:', e);
+    }
+  }
+
+  // Handle payment error
+  function handlePaymentError(error) {
+    console.error('Payment failed:', error);
+  }
+
+  // Handle payment cancel
+  function handlePaymentCancel() {
+    document.getElementById('bookingForm').style.display = 'block';
+    document.getElementById('payment-container').style.display = 'none';
+
+    if (stripePayment) {
+      stripePayment.destroy();
+      stripePayment = null;
+    }
+    document.getElementById('payment-container').innerHTML = '';
+  }
+
+  // Close booking modal
+  function closeBookingModal() {
+    document.getElementById('bookingModal').classList.remove('active');
+    document.body.style.overflow = '';
+
+    if (stripePayment) {
+      stripePayment.destroy();
+      stripePayment = null;
+    }
+    document.getElementById('payment-container').innerHTML = '';
+    selectedSpace = null;
+    currentBooking = null;
+  }
+
+  // Go to dashboard
+  function goToDashboard() {
+    window.location.href = 'customer_dashboard.html';
   }
 
   // Load more spaces
@@ -456,7 +950,6 @@
         const data = await res.json();
 
         if (data.success && data.spaces && data.spaces.length > 0) {
-          // Add new spaces to the beginning
           const newSpaces = data.spaces.filter(
             ns => !allSpaces.some(s => s.space_id === ns.space_id)
           );
@@ -471,7 +964,7 @@
       } catch (e) {
         console.error('Polling error:', e);
       }
-    }, 30000); // Poll every 30 seconds
+    }, 30000);
   }
 
   // Stop polling when page is hidden
@@ -481,6 +974,16 @@
     } else {
       startPolling();
     }
+  });
+
+  // Close modal on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeBookingModal();
+  });
+
+  // Close modal on backdrop click
+  document.getElementById('bookingModal').addEventListener('click', (e) => {
+    if (e.target.id === 'bookingModal') closeBookingModal();
   });
 
   // Initialize
