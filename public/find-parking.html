@@ -496,12 +496,13 @@
 
   <nav class="navbar">
     <a href="home.html" class="navbar-brand"><span>ParkaLot</span></a>
-    <ul class="navbar-menu">
+    <ul class="navbar-menu" id="navbarMenu">
       <li><a href="how-it-works.html">How it works</a></li>
       <li><a href="rent-your-space.html">Rent out your space</a></li>
       <li><a href="business.html">Business</a></li>
-      <li><a href="index.html">Login</a></li>
-      <li><a href="index.html" class="btn btn-primary">Sign up</a></li>
+      <!-- Default auth links - will be replaced by JS if logged in -->
+      <li class="auth-link" id="loginLink"><a href="index.html">Login</a></li>
+      <li class="auth-link" id="signupLink"><a href="index.html" class="btn btn-primary">Sign up</a></li>
     </ul>
   </nav>
 
@@ -635,6 +636,83 @@
 
   <script>
     const API = "/api/index.php";
+
+    // Check authentication and update navbar on page load
+    async function updateNavbar() {
+      const navbarMenu = document.getElementById('navbarMenu');
+      if (!navbarMenu) {
+        console.error('navbarMenu not found');
+        return;
+      }
+
+      try {
+        const res = await fetch(API + '?route=me', { credentials: 'same-origin' });
+
+        if (res.ok) {
+          const data = await res.json();
+
+          if (data && data.user_name) {
+            // User is logged in - replace login/signup with logged-in navbar
+
+            // Remove existing auth links
+            const existingAuthLinks = document.querySelectorAll('.auth-link');
+            existingAuthLinks.forEach(link => link.remove());
+
+            // Add Dashboard link
+            const dashboardLi = document.createElement('li');
+            dashboardLi.className = 'auth-link';
+            dashboardLi.innerHTML = '<a href="customer_dashboard.html">Dashboard</a>';
+            navbarMenu.appendChild(dashboardLi);
+
+            // Add user name display
+            const userLi = document.createElement('li');
+            userLi.className = 'auth-link';
+            userLi.innerHTML = `<span style="color: #6b7280; font-weight: 600;">Hi, ${data.user_name.split(' ')[0]}</span>`;
+            navbarMenu.appendChild(userLi);
+
+            // Add Logout button
+            const logoutLi = document.createElement('li');
+            logoutLi.className = 'auth-link';
+            logoutLi.innerHTML = '<a href="#" onclick="logout(); return false;" class="btn btn-primary">Logout</a>';
+            navbarMenu.appendChild(logoutLi);
+
+            console.log('Navbar updated for logged-in user:', data.user_name);
+          }
+          // If not logged in, keep the default Login/Sign up links from HTML
+        }
+        // If request fails, keep the default Login/Sign up links from HTML
+      } catch (e) {
+        // Error checking auth - keep default Login/Sign up links
+        console.log('Auth check failed, keeping default navbar:', e.message);
+      }
+    }
+
+    // Logout function
+    function logout() {
+      fetch(API + '?route=logout', { credentials: 'same-origin' })
+        .then(() => {
+          window.location.href = 'index.html';
+        })
+        .catch(err => {
+          console.error('Logout error:', err);
+          window.location.href = 'index.html';
+        });
+    }
+
+    // Call updateNavbar on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded, checking auth...');
+      updateNavbar();
+    });
+
+    // Handle browser back/forward cache - re-check auth when page is restored
+    window.addEventListener('pageshow', function(event) {
+      if (event.persisted) {
+        console.log('Page restored from cache, re-checking auth...');
+        updateNavbar();
+      }
+    });
+
     let map;
     let markers = [];
     let userMarker = null;

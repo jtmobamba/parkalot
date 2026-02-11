@@ -1,5 +1,0 @@
-can you create a backend system 'customer_dashboard.html' user management system with the can you add earning money from uploading their own garage at the backbone of the website application. Next the users would be able to see the multi-threaded live uploaded photos about the live pictures that would be related to the garage sharing system website multi-vendor system where the seller can share their own garage where users can pay for using the garage between the hourly rate.
-
-can you add  the job application system and customers are allowed to share there own garages for parking like that customers can make money inside the website, you can also update the customer_dashboard.html page. Next can you add the booking stripe API booking system inside the, 'find-parking.html'. After can add the airport booking section inside the, 'airport-parking.html' pages.
-
-Can you also update the navbar active live session for anytime a user login to the parka lot website system, which would mean that the login navigation link should be removed or replaced with a user icon image to demonstrate that the user has logged inside the parkalot website system.

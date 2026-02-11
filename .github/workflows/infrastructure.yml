@@ -1,0 +1,459 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║                    PARKALOT SYSTEM - INFRASTRUCTURE AS CODE                 ║
+# ║                                                                              ║
+# ║  Terraform-based infrastructure provisioning and management                 ║
+# ║  Version: 1.0                                                                ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+name: Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/infrastructure.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/infrastructure.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      action:
+        description: 'Terraform action'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+      auto_approve:
+        description: 'Auto-approve changes (use with caution)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  TF_VERSION: '1.6.0'
+  TF_WORKING_DIR: 'infrastructure'
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  # ============================================================================
+  # VALIDATE TERRAFORM CONFIGURATION
+  # ============================================================================
+  validate:
+    name: Validate Configuration
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.detect.outputs.environments }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Check Terraform format
+        run: terraform fmt -check -recursive
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        continue-on-error: true
+
+      - name: Initialize Terraform
+        run: terraform init -backend=false
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Validate Terraform
+        run: terraform validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Detect changed environments
+        id: detect
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environments=[\"${{ github.event.inputs.environment }}\"]" >> $GITHUB_OUTPUT
+          else
+            # Check which environment files changed
+            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} 2>/dev/null || echo "")
+
+            ENVS="[]"
+            if echo "$CHANGED_FILES" | grep -q "infrastructure/environments/staging"; then
+              ENVS="[\"staging\"]"
+            fi
+            if echo "$CHANGED_FILES" | grep -q "infrastructure/environments/production"; then
+              if [ "$ENVS" = "[]" ]; then
+                ENVS="[\"production\"]"
+              else
+                ENVS="[\"staging\", \"production\"]"
+              fi
+            fi
+
+            # Default to staging for PR
+            if [ "$ENVS" = "[]" ] && [ "${{ github.event_name }}" = "pull_request" ]; then
+              ENVS="[\"staging\"]"
+            fi
+
+            echo "environments=$ENVS" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run tfsec security scan
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: ${{ env.TF_WORKING_DIR }}
+          soft_fail: true
+
+      - name: Run Checkov security scan
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: ${{ env.TF_WORKING_DIR }}
+          soft_fail: true
+          output_format: sarif
+          output_file_path: checkov-results.sarif
+
+  # ============================================================================
+  # TERRAFORM PLAN
+  # ============================================================================
+  plan:
+    name: Plan (${{ matrix.environment }})
+    runs-on: ubuntu-latest
+    needs: validate
+    if: needs.validate.outputs.environments != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: ${{ fromJson(needs.validate.outputs.environments) }}
+    environment: ${{ matrix.environment }}-plan
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Initialize Terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=parkalot/${{ matrix.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Select workspace
+        run: |
+          terraform workspace select ${{ matrix.environment }} || terraform workspace new ${{ matrix.environment }}
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var-file="environments/${{ matrix.environment }}/terraform.tfvars" \
+            -out="${{ matrix.environment }}.tfplan" \
+            -detailed-exitcode \
+            2>&1 | tee plan-output.txt
+
+          echo "exitcode=$?" >> $GITHUB_OUTPUT
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        continue-on-error: true
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+          path: |
+            ${{ env.TF_WORKING_DIR }}/${{ matrix.environment }}.tfplan
+            ${{ env.TF_WORKING_DIR }}/plan-output.txt
+
+      - name: Comment PR with plan
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('${{ env.TF_WORKING_DIR }}/plan-output.txt', 'utf8');
+            const truncatedPlan = planOutput.length > 60000 ? planOutput.substring(0, 60000) + '\n\n... (truncated)' : planOutput;
+
+            const output = `### Terraform Plan - ${{ matrix.environment }}
+
+            \`\`\`hcl
+            ${truncatedPlan}
+            \`\`\`
+
+            *Plan exit code: ${{ steps.plan.outputs.exitcode }}*
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Check plan result
+        run: |
+          EXITCODE=${{ steps.plan.outputs.exitcode }}
+          if [ "$EXITCODE" = "1" ]; then
+            echo "Terraform plan failed"
+            exit 1
+          fi
+
+  # ============================================================================
+  # TERRAFORM APPLY
+  # ============================================================================
+  apply:
+    name: Apply (${{ matrix.environment }})
+    runs-on: ubuntu-latest
+    needs: [validate, plan]
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply')
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        environment: ${{ fromJson(needs.validate.outputs.environments) }}
+    environment: ${{ matrix.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+          path: ${{ env.TF_WORKING_DIR }}
+
+      - name: Initialize Terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=parkalot/${{ matrix.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Select workspace
+        run: |
+          terraform workspace select ${{ matrix.environment }}
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Apply
+        run: |
+          if [ "${{ github.event.inputs.auto_approve }}" = "true" ]; then
+            terraform apply -auto-approve "${{ matrix.environment }}.tfplan"
+          else
+            terraform apply "${{ matrix.environment }}.tfplan"
+          fi
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Output infrastructure details
+        id: outputs
+        run: |
+          echo "## Infrastructure Outputs - ${{ matrix.environment }}" >> $GITHUB_STEP_SUMMARY
+          terraform output -json | jq -r 'to_entries[] | "- **\(.key)**: \(.value.value)"' >> $GITHUB_STEP_SUMMARY
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Notify on completion
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "Infrastructure Updated: ${{ matrix.environment }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "✅ *Infrastructure Updated*\n• Environment: `${{ matrix.environment }}`\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        continue-on-error: true
+
+  # ============================================================================
+  # TERRAFORM DESTROY (Manual Only)
+  # ============================================================================
+  destroy:
+    name: Destroy (${{ github.event.inputs.environment }})
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+    environment: ${{ github.event.inputs.environment }}-destroy
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Initialize Terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=parkalot/${{ github.event.inputs.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Select workspace
+        run: |
+          terraform workspace select ${{ github.event.inputs.environment }}
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Destroy
+        run: |
+          if [ "${{ github.event.inputs.auto_approve }}" = "true" ]; then
+            terraform destroy -auto-approve \
+              -var-file="environments/${{ github.event.inputs.environment }}/terraform.tfvars"
+          else
+            echo "Destroy requires auto_approve=true for safety"
+            exit 1
+          fi
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Alert on destruction
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "⚠️ Infrastructure Destroyed: ${{ github.event.inputs.environment }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "⚠️ *Infrastructure Destroyed*\n• Environment: `${{ github.event.inputs.environment }}`\n• Initiated by: ${{ github.actor }}\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  # ============================================================================
+  # DRIFT DETECTION (Scheduled)
+  # ============================================================================
+  drift-detection:
+    name: Drift Detection
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    strategy:
+      matrix:
+        environment: [staging, production]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Initialize Terraform
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=parkalot/${{ matrix.environment }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Select workspace
+        run: |
+          terraform workspace select ${{ matrix.environment }}
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Check for drift
+        id: drift
+        run: |
+          terraform plan \
+            -var-file="environments/${{ matrix.environment }}/terraform.tfvars" \
+            -detailed-exitcode \
+            -out=drift.tfplan 2>&1 | tee drift-output.txt
+
+          EXITCODE=$?
+          echo "exitcode=$EXITCODE" >> $GITHUB_OUTPUT
+
+          if [ "$EXITCODE" = "2" ]; then
+            echo "drift_detected=true" >> $GITHUB_OUTPUT
+          else
+            echo "drift_detected=false" >> $GITHUB_OUTPUT
+          fi
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        continue-on-error: true
+
+      - name: Alert on drift
+        if: steps.drift.outputs.drift_detected == 'true'
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "⚠️ Infrastructure Drift Detected: ${{ matrix.environment }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "⚠️ *Infrastructure Drift Detected*\n• Environment: `${{ matrix.environment }}`\n• Action: Review and reconcile differences\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

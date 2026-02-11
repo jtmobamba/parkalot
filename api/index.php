@@ -952,6 +952,7 @@ switch ($path) {
             try {
                 $stmt = $db->prepare("
                     SELECT u.user_id, u.full_name, u.email, u.role, u.email_verified, u.created_at,
+                           u.phone, u.address, u.city, u.postal_code,
                            u.stripe_customer_id, u.stripe_connect_id,
                            (SELECT COUNT(*) FROM customer_spaces WHERE owner_id = u.user_id) as space_count
                     FROM users u WHERE u.user_id = ?
@@ -966,6 +967,10 @@ switch ($path) {
                             'user_id' => $user['user_id'],
                             'full_name' => $user['full_name'],
                             'email' => $user['email'],
+                            'phone' => $user['phone'] ?? '',
+                            'address' => $user['address'] ?? '',
+                            'city' => $user['city'] ?? '',
+                            'postal_code' => $user['postal_code'] ?? '',
                             'role' => $user['role'],
                             'email_verified' => (bool)$user['email_verified'],
                             'created_at' => $user['created_at'],
@@ -977,16 +982,56 @@ switch ($path) {
                     echo json_encode(['error' => 'Profile not found']);
                 }
             } catch (PDOException $e) {
-                echo json_encode(['error' => 'Database error']);
+                echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
             }
         } elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             // Update profile
             $updates = [];
             $params = [];
 
-            if (!empty($data->full_name)) {
+            // Full name validation
+            if (isset($data->full_name)) {
+                $fullName = trim($data->full_name);
+                if (strlen($fullName) < 2) {
+                    echo json_encode(['error' => 'Full name must be at least 2 characters']);
+                    break;
+                }
                 $updates[] = "full_name = ?";
-                $params[] = trim($data->full_name);
+                $params[] = $fullName;
+            }
+
+            // Phone validation (optional)
+            if (isset($data->phone)) {
+                $phone = trim($data->phone);
+                if (!empty($phone) && !preg_match('/^[\+]?[\d\s\-\(\)]{7,20}$/', $phone)) {
+                    echo json_encode(['error' => 'Invalid phone number format']);
+                    break;
+                }
+                $updates[] = "phone = ?";
+                $params[] = $phone ?: null;
+            }
+
+            // Address (optional)
+            if (isset($data->address)) {
+                $updates[] = "address = ?";
+                $params[] = trim($data->address) ?: null;
+            }
+
+            // City (optional)
+            if (isset($data->city)) {
+                $updates[] = "city = ?";
+                $params[] = trim($data->city) ?: null;
+            }
+
+            // Postal code (optional)
+            if (isset($data->postal_code)) {
+                $postalCode = trim($data->postal_code);
+                if (!empty($postalCode) && !preg_match('/^[A-Za-z0-9\s\-]{3,10}$/', $postalCode)) {
+                    echo json_encode(['error' => 'Invalid postal code format']);
+                    break;
+                }
+                $updates[] = "postal_code = ?";
+                $params[] = $postalCode ?: null;
             }
 
             if (empty($updates)) {
@@ -999,9 +1044,14 @@ switch ($path) {
             try {
                 $stmt = $db->prepare("UPDATE users SET " . implode(", ", $updates) . " WHERE user_id = ?");
                 $stmt->execute($params);
-                echo json_encode(['success' => true, 'message' => 'Profile updated']);
+                echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
             } catch (PDOException $e) {
-                echo json_encode(['error' => 'Failed to update profile']);
+                // Check if columns don't exist and provide helpful message
+                if (strpos($e->getMessage(), 'Unknown column') !== false) {
+                    echo json_encode(['error' => 'Profile fields not available. Please run database migration.']);
+                } else {
+                    echo json_encode(['error' => 'Failed to update profile']);
+                }
             }
         } elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
             // Delete account

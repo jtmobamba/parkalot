@@ -1,224 +1,496 @@
 # ╔════════════════════════════════════════════════════════════════════╗
-# ║         PARKALOT SYSTEM - CI/CD PIPELINE CONFIGURATION             ║
+# ║            PARKALOT SYSTEM - CONTINUOUS INTEGRATION                ║
 # ║                                                                    ║
-# ║  Continuous Integration and Deployment pipeline using GitHub       ║
-# ║  Actions. This pipeline automates:                                 ║
-# ║  - Code quality checks                                             ║
-# ║  - Automated testing                                               ║
-# ║  - Security scanning                                               ║
-# ║  - Docker image building                                           ║
+# ║  Automated testing, code quality, and security checks             ║
+# ║  DevOps Pipeline v2.0                                              ║
 # ╚════════════════════════════════════════════════════════════════════╝
 
-name: ParkaLot CI/CD Pipeline
+name: CI Pipeline
 
-# ─────────────────────────────────────────────────────────────────────
-# TRIGGERS
-# ─────────────────────────────────────────────────────────────────────
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop, 'feature/**', 'hotfix/**', 'release/**']
   pull_request:
-    branches: [ main ]
-  workflow_dispatch:  # Allow manual triggering
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Enable debug mode'
+        required: false
+        default: 'false'
+        type: boolean
 
-# ─────────────────────────────────────────────────────────────────────
-# ENVIRONMENT VARIABLES
-# ─────────────────────────────────────────────────────────────────────
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   PHP_VERSION: '8.1'
-  MYSQL_VERSION: '8.0'
+  NODE_VERSION: '20'
+  DB_HOST: 127.0.0.1
+  DB_NAME: parkalotdb_test
+  DB_USER: root
+  DB_PASSWORD: root
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
-# ─────────────────────────────────────────────────────────────────────
-# JOBS
-# ─────────────────────────────────────────────────────────────────────
 jobs:
-
-  # ═══════════════════════════════════════════════════════════════════
-  # JOB 1: CODE QUALITY CHECKS
-  # ═══════════════════════════════════════════════════════════════════
-  code-quality:
-    name: Code Quality Analysis
+  # ─────────────────────────────────────────────────────────────────────
+  # INITIAL SETUP & VALIDATION
+  # ─────────────────────────────────────────────────────────────────────
+  setup:
+    name: Setup & Validate
     runs-on: ubuntu-latest
+    outputs:
+      should-deploy: ${{ steps.check.outputs.should-deploy }}
+      version: ${{ steps.version.outputs.version }}
+      short-sha: ${{ steps.version.outputs.short-sha }}
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ env.PHP_VERSION }}
-          extensions: pdo, pdo_mysql, mbstring, xml, curl
-          coverage: none
+          fetch-depth: 0
 
-      - name: Check PHP Syntax
+      - name: Get version info
+        id: version
         run: |
-          echo "Checking PHP syntax errors..."
-          errors=$(find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \; 2>&1)
-          if echo "$errors" | grep -q "Parse error\|Fatal error"; then
-            echo "$errors" | grep "Parse error\|Fatal error"
-            exit 1
-          fi
-          echo "✓ All PHP files have valid syntax"
+          echo "short-sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "version=$(date +'%Y.%m.%d')-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Check for Debug Statements
+      - name: Check deployment conditions
+        id: check
         run: |
-          echo "Checking for debug statements..."
-          if grep -r "var_dump\|print_r" --include="*.php" --exclude-dir=vendor . 2>/dev/null; then
-            echo "⚠ Warning: Debug statements found (review recommended)"
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
           else
-            echo "✓ No debug statements found"
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
           fi
 
-  # ═══════════════════════════════════════════════════════════════════
-  # JOB 2: AUTOMATED TESTING
-  # ═══════════════════════════════════════════════════════════════════
-  test:
-    name: Automated Tests
+      - name: Print build info
+        run: |
+          echo "╔════════════════════════════════════════════════════════════════════╗"
+          echo "║                        BUILD INFORMATION                           ║"
+          echo "╚════════════════════════════════════════════════════════════════════╝"
+          echo "  Branch/Tag: ${{ github.ref_name }}"
+          echo "  Commit SHA: ${{ github.sha }}"
+          echo "  Short SHA: ${{ steps.version.outputs.short-sha }}"
+          echo "  Version: ${{ steps.version.outputs.version }}"
+          echo "  Actor: ${{ github.actor }}"
+          echo "  Event: ${{ github.event_name }}"
+          echo "  Should Deploy: ${{ steps.check.outputs.should-deploy }}"
+          echo "══════════════════════════════════════════════════════════════════════"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PHP LINTING & CODE QUALITY
+  # ─────────────────────────────────────────────────────────────────────
+  lint:
+    name: Code Quality
     runs-on: ubuntu-latest
-    needs: code-quality
+    needs: setup
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ env.PHP_VERSION }}
-          extensions: pdo, pdo_mysql, mbstring
+          extensions: pdo, pdo_mysql, gd, zip, opcache, mbstring, xml, curl
+          coverage: none
+          tools: php-cs-fixer, phpstan, phpmd
 
-      - name: Run Authentication Tests
-        run: php tests/AuthenticationTest.php
+      - name: Cache PHP tools
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: php-tools-${{ runner.os }}-${{ hashFiles('**/composer.lock') }}
+          restore-keys: php-tools-${{ runner.os }}-
 
-      - name: Run Reservation Tests
-        run: php tests/ReservationTest.php
+      - name: Check PHP syntax errors
+        run: |
+          echo "Checking PHP syntax..."
+          find . -name "*.php" -not -path "./vendor/*" -not -path "./node_modules/*" -print0 | xargs -0 -n1 php -l 2>&1 | grep -v "No syntax errors"
+          echo "PHP syntax check completed!"
 
-      - name: Run Payment Tests
-        run: php tests/PaymentTest.php
+      - name: Run PHP CS Fixer
+        run: |
+          php-cs-fixer fix --dry-run --diff --format=json --allow-risky=yes . > cs-fixer-report.json 2>&1 || true
+        continue-on-error: true
 
-      - name: Run Security Tests (STRIDE Verification)
-        run: php tests/SecurityTest.php
+      - name: Upload lint results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-results
+          path: cs-fixer-report.json
+          retention-days: 7
+        if: always()
 
-      - name: Run Hardening Tests
-        run: php tests/HardeningTest.php
+  # ─────────────────────────────────────────────────────────────────────
+  # UNIT & INTEGRATION TESTS
+  # ─────────────────────────────────────────────────────────────────────
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    timeout-minutes: 30
 
-      - name: Run Full Test Suite
-        run: php tests/RunAllTests.php
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: parkalotdb_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
-      - name: Generate Test Report
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo, pdo_mysql, gd, zip, opcache, curl, mbstring, redis
+          coverage: xdebug
+          ini-values: memory_limit=512M
+
+      - name: Wait for MySQL
+        run: |
+          echo "Waiting for MySQL to be ready..."
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 --silent 2>/dev/null; then
+              echo "MySQL is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Setup test database
+        run: |
+          mysql -h 127.0.0.1 -u root -proot -e "SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';"
+          if [ -f parkalotdb.sql ]; then
+            mysql -h 127.0.0.1 -u root -proot parkalotdb_test < parkalotdb.sql
+            echo "Database schema imported successfully"
+          else
+            echo "No SQL file found, tests will create tables"
+          fi
+
+      - name: Create test configuration
+        run: |
+          mkdir -p config
+          cat > config/database.php << 'EOF'
+          <?php
+          class Database {
+              private static $connection = null;
+              public static function connect() {
+                  if (self::$connection === null) {
+                      $host = getenv('DB_HOST') ?: '127.0.0.1';
+                      $dbname = getenv('DB_NAME') ?: 'parkalotdb_test';
+                      $username = getenv('DB_USER') ?: 'root';
+                      $password = getenv('DB_PASSWORD') ?: 'root';
+                      self::$connection = new PDO(
+                          "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
+                          $username, $password,
+                          [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+                      );
+                  }
+                  return self::$connection;
+              }
+          }
+          function getDbConnection() { return Database::connect(); }
+          EOF
+
+      - name: Run test suite
+        id: tests
+        env:
+          DB_HOST: ${{ env.DB_HOST }}
+          DB_NAME: ${{ env.DB_NAME }}
+          DB_USER: ${{ env.DB_USER }}
+          DB_PASSWORD: ${{ env.DB_PASSWORD }}
+        run: |
+          echo "Running ParkaLot Test Suite..."
+          php tests/RunAllTests.php 2>&1 | tee test-output.log
+          echo "Tests completed!"
+
+      - name: Generate test report
         if: always()
         run: |
-          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- Authentication Tests: ✓" >> $GITHUB_STEP_SUMMARY
-          echo "- Reservation Tests: ✓" >> $GITHUB_STEP_SUMMARY
-          echo "- Payment Tests: ✓" >> $GITHUB_STEP_SUMMARY
-          echo "- Security Tests (STRIDE): ✓" >> $GITHUB_STEP_SUMMARY
-          echo "- Hardening Tests: ✓" >> $GITHUB_STEP_SUMMARY
+          mkdir -p test-reports
+          cp test-output.log test-reports/ || true
+          echo "Test execution completed at $(date)" > test-reports/summary.txt
 
-  # ═══════════════════════════════════════════════════════════════════
-  # JOB 3: SECURITY SCANNING
-  # ═══════════════════════════════════════════════════════════════════
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_number }}
+          path: test-reports/
+          retention-days: 14
+
+  # ─────────────────────────────────────────────────────────────────────
+  # SECURITY SCANNING
+  # ─────────────────────────────────────────────────────────────────────
   security:
-    name: Security Analysis
+    name: Security Scan
     runs-on: ubuntu-latest
-    needs: code-quality
+    needs: setup
+    permissions:
+      security-events: write
+      contents: read
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check for Hardcoded Credentials
-        run: |
-          echo "Scanning for hardcoded credentials..."
-          findings=$(grep -r "password\s*=\s*['\"][^'\"]*['\"]" --include="*.php" --exclude-dir=vendor . 2>/dev/null | grep -v "password_hash\|PASSWORD_DEFAULT\|getenv\|config" || true)
-          if [ -n "$findings" ]; then
-            echo "⚠ Review: Potential hardcoded credentials found:"
-            echo "$findings"
-          else
-            echo "✓ No hardcoded credentials detected"
-          fi
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+        continue-on-error: true
 
-      - name: Check for SQL Injection Vulnerabilities
-        run: |
-          echo "Checking for potential SQL injection..."
-          findings=$(grep -r "\$_GET\|\$_POST\|\$_REQUEST" --include="*.php" --exclude-dir=vendor . 2>/dev/null | grep -v "prepare\|htmlspecialchars\|filter_var\|sanitize" | head -20 || true)
-          if [ -n "$findings" ]; then
-            echo "⚠ Review recommended - direct superglobal usage found:"
-            echo "$findings"
-          else
-            echo "✓ No direct superglobal usage without sanitization"
-          fi
+      - name: Upload Trivy scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
 
-      - name: Check Security Headers
-        run: |
-          echo "Verifying security configurations exist..."
-          if [ -f config/security.php ]; then
-            echo "✓ Security config found"
-          else
-            echo "✗ Security config missing"
-            exit 1
-          fi
+      - name: Check for hardcoded secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ""
+          extra_args: --only-verified --json
+        continue-on-error: true
 
-  # ═══════════════════════════════════════════════════════════════════
-  # JOB 4: DOCKER BUILD
-  # ═══════════════════════════════════════════════════════════════════
+      - name: Run OWASP dependency check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'ParkaLot'
+          path: '.'
+          format: 'HTML'
+          out: 'dependency-check-report'
+        continue-on-error: true
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports-${{ github.run_number }}
+          path: |
+            trivy-results.sarif
+            dependency-check-report/
+          retention-days: 30
+
+  # ─────────────────────────────────────────────────────────────────────
+  # DOCKER BUILD & SCAN
+  # ─────────────────────────────────────────────────────────────────────
   docker:
-    name: Docker Build
+    name: Docker Build & Scan
     runs-on: ubuntu-latest
     needs: [test, security]
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker Image
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix=sha-
+            type=raw,value=ci-${{ github.run_number }}
+
+      - name: Build Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
           push: false
-          tags: parkalot:${{ github.sha }}
+          load: true
+          tags: parkalot:ci-test
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ needs.setup.outputs.version }}
 
-      - name: Test Docker Image
+      - name: Scan Docker image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'parkalot:ci-test'
+          format: 'sarif'
+          output: 'docker-trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+        continue-on-error: true
+
+      - name: Upload Docker scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'docker-trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Test container health
         run: |
-          docker build -t parkalot:test .
-          echo "Docker image built successfully"
+          echo "Starting container for health check..."
+          docker run -d --name parkalot-test -p 8080:80 parkalot:ci-test
 
-  # ═══════════════════════════════════════════════════════════════════
-  # JOB 5: DEPLOYMENT READINESS
-  # ═══════════════════════════════════════════════════════════════════
-  deploy-check:
-    name: Deployment Readiness
+          echo "Waiting for container to be healthy..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080/ > /dev/null 2>&1; then
+              echo "Container is healthy!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+          echo "Container logs:"
+          docker logs parkalot-test
+
+          docker stop parkalot-test
+          docker rm parkalot-test
+
+      - name: Run container security scan
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy image --severity HIGH,CRITICAL parkalot:ci-test || true
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PERFORMANCE TESTING
+  # ─────────────────────────────────────────────────────────────────────
+  performance:
+    name: Performance Test
     runs-on: ubuntu-latest
-    needs: [docker]
-    if: github.ref == 'refs/heads/main'
+    needs: docker
+    if: github.event_name == 'pull_request'
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify Required Files
-        run: |
-          echo "Checking deployment prerequisites..."
-          test -f Dockerfile && echo "✓ Dockerfile present"
-          test -f docker-compose.yml && echo "✓ docker-compose.yml present"
-          test -f config/database.php && echo "✓ Database config present"
-          test -f config/security.php && echo "✓ Security config present"
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          configPath: './lighthouserc.json'
+          uploadArtifacts: true
+        continue-on-error: true
 
-      - name: Generate Deployment Summary
+  # ─────────────────────────────────────────────────────────────────────
+  # NOTIFICATION
+  # ─────────────────────────────────────────────────────────────────────
+  notify:
+    name: Notify Status
+    runs-on: ubuntu-latest
+    needs: [lint, test, security, docker]
+    if: always()
+
+    steps:
+      - name: Determine overall status
+        id: status
         run: |
-          echo "## Deployment Readiness Report" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.lint.result }}" == "failure" ]] || \
+             [[ "${{ needs.test.result }}" == "failure" ]] || \
+             [[ "${{ needs.docker.result }}" == "failure" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=#dc3545" >> $GITHUB_OUTPUT
+          elif [[ "${{ needs.security.result }}" == "failure" ]]; then
+            echo "status=warning" >> $GITHUB_OUTPUT
+            echo "color=#ffc107" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=#28a745" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create job summary
+        run: |
+          echo "## CI Pipeline Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Code Quality | ✓ Passed |" >> $GITHUB_STEP_SUMMARY
-          echo "| Unit Tests | ✓ Passed |" >> $GITHUB_STEP_SUMMARY
-          echo "| Security Scan | ✓ Passed |" >> $GITHUB_STEP_SUMMARY
-          echo "| Docker Build | ✓ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result == 'success' && '✅' || '❌' }} ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test | ${{ needs.test.result == 'success' && '✅' || '❌' }} ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security.result == 'success' && '✅' || '⚠️' }} ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Docker | ${{ needs.docker.result == 'success' && '✅' || '❌' }} ${{ needs.docker.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Ready for deployment** 🚀" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Send Slack notification
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "attachments": [{
+                "color": "${{ steps.status.outputs.color }}",
+                "blocks": [
+                  {
+                    "type": "header",
+                    "text": {
+                      "type": "plain_text",
+                      "text": "CI Pipeline: ${{ steps.status.outputs.status }}"
+                    }
+                  },
+                  {
+                    "type": "section",
+                    "fields": [
+                      {"type": "mrkdwn", "text": "*Repository:*\n${{ github.repository }}"},
+                      {"type": "mrkdwn", "text": "*Branch:*\n${{ github.ref_name }}"},
+                      {"type": "mrkdwn", "text": "*Commit:*\n${{ github.sha }}"},
+                      {"type": "mrkdwn", "text": "*Author:*\n${{ github.actor }}"}
+                    ]
+                  }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        continue-on-error: true

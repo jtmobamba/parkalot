@@ -201,6 +201,45 @@ try {
     $errors[] = $e->getMessage();
 }
 
+// Add profile columns to users table
+echo "<h2>Adding profile columns to users table...</h2>";
+try {
+    // Check if columns exist first
+    $columnsToAdd = [
+        'phone' => "ALTER TABLE `users` ADD COLUMN `phone` VARCHAR(20) DEFAULT NULL AFTER `email`",
+        'address' => "ALTER TABLE `users` ADD COLUMN `address` VARCHAR(255) DEFAULT NULL AFTER `phone`",
+        'city' => "ALTER TABLE `users` ADD COLUMN `city` VARCHAR(100) DEFAULT NULL AFTER `address`",
+        'postal_code' => "ALTER TABLE `users` ADD COLUMN `postal_code` VARCHAR(20) DEFAULT NULL AFTER `city`"
+    ];
+
+    $stmt = $db->query("DESCRIBE users");
+    $existingColumns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $columnsAdded = 0;
+    foreach ($columnsToAdd as $column => $sql) {
+        if (!in_array($column, $existingColumns)) {
+            try {
+                $db->exec($sql);
+                echo "<p class='success'>Added column: {$column}</p>";
+                $columnsAdded++;
+            } catch (Exception $e) {
+                echo "<p class='warning'>Could not add column {$column}: " . htmlspecialchars($e->getMessage()) . "</p>";
+            }
+        } else {
+            echo "<p class='success'>Column {$column} already exists.</p>";
+        }
+    }
+
+    if ($columnsAdded > 0) {
+        echo "<p class='success'>{$columnsAdded} new column(s) added to users table.</p>";
+    } else {
+        echo "<p class='success'>All profile columns already exist in users table.</p>";
+    }
+} catch (Exception $e) {
+    echo "<p class='error'>Error modifying users table: " . htmlspecialchars($e->getMessage()) . "</p>";
+    $errors[] = $e->getMessage();
+}
+
 // Summary
 echo "<hr>";
 echo "<h2>Summary</h2>";

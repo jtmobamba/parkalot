@@ -1,0 +1,563 @@
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║                    PARKALOT SYSTEM - SCHEDULED TASKS                        ║
+# ║                                                                              ║
+# ║  Automated maintenance, backups, and monitoring tasks                       ║
+# ║  Version: 1.0                                                                ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+
+name: Scheduled Tasks
+
+on:
+  schedule:
+    # Database backup - Daily at 2:00 AM UTC
+    - cron: '0 2 * * *'
+    # Cleanup old artifacts - Weekly on Sunday at 3:00 AM UTC
+    - cron: '0 3 * * 0'
+    # Security scan - Daily at 4:00 AM UTC
+    - cron: '0 4 * * *'
+    # Health check - Every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Task to run'
+        required: true
+        type: choice
+        options:
+          - all
+          - backup
+          - cleanup
+          - security-scan
+          - health-check
+          - dependency-update
+
+env:
+  PHP_VERSION: '8.2'
+  BACKUP_RETENTION_DAYS: 30
+  ARTIFACT_RETENTION_DAYS: 7
+
+jobs:
+  # ============================================================================
+  # DETERMINE WHICH TASKS TO RUN
+  # ============================================================================
+  determine-tasks:
+    name: Determine Tasks
+    runs-on: ubuntu-latest
+    outputs:
+      run_backup: ${{ steps.check.outputs.run_backup }}
+      run_cleanup: ${{ steps.check.outputs.run_cleanup }}
+      run_security: ${{ steps.check.outputs.run_security }}
+      run_health: ${{ steps.check.outputs.run_health }}
+      run_dependency: ${{ steps.check.outputs.run_dependency }}
+    steps:
+      - name: Determine tasks to run
+        id: check
+        run: |
+          HOUR=$(date -u +%H)
+          DAY=$(date -u +%u)
+
+          # Manual trigger
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TASK="${{ github.event.inputs.task }}"
+            echo "run_backup=$([[ $TASK == 'all' || $TASK == 'backup' ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+            echo "run_cleanup=$([[ $TASK == 'all' || $TASK == 'cleanup' ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+            echo "run_security=$([[ $TASK == 'all' || $TASK == 'security-scan' ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+            echo "run_health=$([[ $TASK == 'all' || $TASK == 'health-check' ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+            echo "run_dependency=$([[ $TASK == 'all' || $TASK == 'dependency-update' ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          else
+            # Scheduled triggers based on cron
+            echo "run_backup=$([[ $HOUR == '02' ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+            echo "run_cleanup=$([[ $HOUR == '03' && $DAY == '7' ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+            echo "run_security=$([[ $HOUR == '04' ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+            echo "run_health=$([[ $((HOUR % 6)) == 0 ]] && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+            echo "run_dependency=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================================================
+  # DATABASE BACKUP
+  # ============================================================================
+  database-backup:
+    name: Database Backup
+    runs-on: ubuntu-latest
+    needs: determine-tasks
+    if: needs.determine-tasks.outputs.run_backup == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create backup timestamp
+        id: timestamp
+        run: echo "timestamp=$(date +%Y%m%d_%H%M%S)" >> $GITHUB_OUTPUT
+
+      - name: Backup production database
+        env:
+          DB_HOST: ${{ secrets.PROD_DB_HOST }}
+          DB_USER: ${{ secrets.PROD_DB_USER }}
+          DB_PASS: ${{ secrets.PROD_DB_PASS }}
+          DB_NAME: ${{ secrets.PROD_DB_NAME }}
+        run: |
+          mkdir -p backups
+
+          # Install MySQL client
+          sudo apt-get update && sudo apt-get install -y mysql-client
+
+          # Create backup
+          mysqldump -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASS" \
+            --single-transaction \
+            --routines \
+            --triggers \
+            --events \
+            "$DB_NAME" > "backups/parkalot_${{ steps.timestamp.outputs.timestamp }}.sql"
+
+          # Compress backup
+          gzip "backups/parkalot_${{ steps.timestamp.outputs.timestamp }}.sql"
+
+          # Generate checksum
+          sha256sum "backups/parkalot_${{ steps.timestamp.outputs.timestamp }}.sql.gz" > "backups/parkalot_${{ steps.timestamp.outputs.timestamp }}.sha256"
+
+          echo "Backup created: parkalot_${{ steps.timestamp.outputs.timestamp }}.sql.gz"
+
+      - name: Upload backup to S3
+        if: success()
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+        run: |
+          aws s3 cp backups/ "s3://$S3_BUCKET/database/$(date +%Y/%m)/" \
+            --recursive \
+            --storage-class STANDARD_IA
+
+      - name: Clean old backups from S3
+        if: success()
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+        run: |
+          # Delete backups older than retention period
+          CUTOFF_DATE=$(date -d "-$BACKUP_RETENTION_DAYS days" +%Y-%m-%d)
+          aws s3 ls "s3://$S3_BUCKET/database/" --recursive | \
+            awk -v cutoff="$CUTOFF_DATE" '$1 < cutoff {print $4}' | \
+            xargs -I {} aws s3 rm "s3://$S3_BUCKET/{}"
+
+      - name: Notify on backup completion
+        if: always()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "Database Backup ${{ job.status }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ job.status == 'success' && '✅' || '❌' }} *Database Backup ${{ job.status }}*\n• Timestamp: ${{ steps.timestamp.outputs.timestamp }}\n• Retention: ${{ env.BACKUP_RETENTION_DAYS }} days"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        continue-on-error: true
+
+  # ============================================================================
+  # CLEANUP OLD ARTIFACTS
+  # ============================================================================
+  cleanup-artifacts:
+    name: Cleanup Artifacts
+    runs-on: ubuntu-latest
+    needs: determine-tasks
+    if: needs.determine-tasks.outputs.run_cleanup == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Delete old workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          retain_days: ${{ env.ARTIFACT_RETENTION_DAYS }}
+          keep_minimum_runs: 5
+
+      - name: Clean Docker registry
+        env:
+          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          # Login to registry
+          echo "$DOCKER_PASSWORD" | docker login "$DOCKER_REGISTRY" -u "$DOCKER_USERNAME" --password-stdin
+
+          # List and delete old images (keeping last 10)
+          echo "Cleaning old Docker images..."
+          # Note: Actual cleanup depends on registry type (DockerHub, ECR, GCR, etc.)
+
+      - name: Clean temporary files on servers
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # Cleanup staging
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key deploy@$STAGING_HOST << 'EOF'
+            find /tmp -name "parkalot_*" -mtime +7 -delete 2>/dev/null || true
+            find /var/log/parkalot -name "*.log" -mtime +30 -delete 2>/dev/null || true
+            docker system prune -f --filter "until=168h" 2>/dev/null || true
+          EOF
+
+          # Cleanup production
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key deploy@$PROD_HOST << 'EOF'
+            find /tmp -name "parkalot_*" -mtime +7 -delete 2>/dev/null || true
+            find /var/log/parkalot -name "*.log" -mtime +30 -delete 2>/dev/null || true
+            docker system prune -f --filter "until=168h" 2>/dev/null || true
+          EOF
+        continue-on-error: true
+
+      - name: Report cleanup summary
+        run: |
+          echo "## Cleanup Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Workflow runs cleaned: older than ${{ env.ARTIFACT_RETENTION_DAYS }} days" >> $GITHUB_STEP_SUMMARY
+          echo "- Docker images cleaned: keeping last 10" >> $GITHUB_STEP_SUMMARY
+          echo "- Temp files cleaned: older than 7 days" >> $GITHUB_STEP_SUMMARY
+          echo "- Log files cleaned: older than 30 days" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # SECURITY SCAN
+  # ============================================================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: determine-tasks
+    if: needs.determine-tasks.outputs.run_security == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Check for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          extra_args: --only-verified
+
+      - name: Dependency vulnerability check
+        run: |
+          # Check PHP dependencies
+          if [ -f composer.lock ]; then
+            composer audit --format=json > composer-audit.json 2>/dev/null || true
+            if [ -s composer-audit.json ]; then
+              echo "## PHP Dependency Vulnerabilities" >> $GITHUB_STEP_SUMMARY
+              cat composer-audit.json | jq -r '.advisories | to_entries[] | "- \(.key): \(.value[0].title)"' >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+            fi
+          fi
+
+          # Check npm dependencies
+          if [ -f package-lock.json ]; then
+            npm audit --json > npm-audit.json 2>/dev/null || true
+            if [ -s npm-audit.json ]; then
+              echo "## NPM Dependency Vulnerabilities" >> $GITHUB_STEP_SUMMARY
+              cat npm-audit.json | jq -r '.vulnerabilities | to_entries[] | "- \(.key): \(.value.severity)"' >> $GITHUB_STEP_SUMMARY 2>/dev/null || true
+            fi
+          fi
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.10.0
+        with:
+          target: ${{ secrets.STAGING_URL }}
+          rules_file_name: '.zap/rules.tsv'
+          allow_issue_writing: false
+        continue-on-error: true
+
+      - name: Generate security report
+        if: always()
+        run: |
+          echo "## Daily Security Scan Report" >> $GITHUB_STEP_SUMMARY
+          echo "- Date: $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "- Trivy scan: Complete" >> $GITHUB_STEP_SUMMARY
+          echo "- Secret scan: Complete" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependency audit: Complete" >> $GITHUB_STEP_SUMMARY
+
+      - name: Alert on critical findings
+        if: failure()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "🚨 Critical Security Issues Found",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚨 *Critical Security Issues Found*\n• Repository: ${{ github.repository }}\n• Scan Date: $(date -u +%Y-%m-%d)\n• <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  # ============================================================================
+  # HEALTH CHECK
+  # ============================================================================
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: determine-tasks
+    if: needs.determine-tasks.outputs.run_health == 'true'
+    strategy:
+      matrix:
+        environment: [staging, production]
+    steps:
+      - name: Set environment URL
+        id: env
+        run: |
+          if [ "${{ matrix.environment }}" = "production" ]; then
+            echo "url=${{ secrets.PROD_URL }}" >> $GITHUB_OUTPUT
+            echo "name=Production" >> $GITHUB_OUTPUT
+          else
+            echo "url=${{ secrets.STAGING_URL }}" >> $GITHUB_OUTPUT
+            echo "name=Staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check application health
+        id: health
+        run: |
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.env.outputs.url }}/api/?route=health" --max-time 30 || echo "000")
+          echo "status_code=$RESPONSE" >> $GITHUB_OUTPUT
+
+          if [ "$RESPONSE" = "200" ]; then
+            echo "status=healthy" >> $GITHUB_OUTPUT
+          else
+            echo "status=unhealthy" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check database connectivity
+        id: db
+        run: |
+          RESPONSE=$(curl -s "${{ steps.env.outputs.url }}/api/?route=health&check=db" --max-time 30 || echo '{"status":"error"}')
+          DB_STATUS=$(echo "$RESPONSE" | jq -r '.database // "unknown"')
+          echo "status=$DB_STATUS" >> $GITHUB_OUTPUT
+
+      - name: Check response time
+        id: performance
+        run: |
+          RESPONSE_TIME=$(curl -s -o /dev/null -w "%{time_total}" "${{ steps.env.outputs.url }}" --max-time 30 || echo "0")
+          echo "response_time=$RESPONSE_TIME" >> $GITHUB_OUTPUT
+
+          # Alert if response time > 5 seconds
+          if (( $(echo "$RESPONSE_TIME > 5" | bc -l) )); then
+            echo "slow=true" >> $GITHUB_OUTPUT
+          else
+            echo "slow=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check SSL certificate
+        id: ssl
+        run: |
+          DOMAIN=$(echo "${{ steps.env.outputs.url }}" | sed 's|https://||' | sed 's|/.*||')
+          EXPIRY=$(echo | openssl s_client -servername "$DOMAIN" -connect "$DOMAIN:443" 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+
+          if [ -n "$EXPIRY" ]; then
+            EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s)
+            NOW_EPOCH=$(date +%s)
+            DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+            echo "days_left=$DAYS_LEFT" >> $GITHUB_OUTPUT
+
+            if [ $DAYS_LEFT -lt 30 ]; then
+              echo "expiring=true" >> $GITHUB_OUTPUT
+            else
+              echo "expiring=false" >> $GITHUB_OUTPUT
+            fi
+          fi
+        continue-on-error: true
+
+      - name: Check disk space
+        if: matrix.environment == 'production'
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          PROD_HOST: ${{ secrets.PROD_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          DISK_USAGE=$(ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key deploy@$PROD_HOST "df -h / | tail -1 | awk '{print \$5}' | sed 's/%//'")
+          echo "Disk usage: ${DISK_USAGE}%"
+
+          if [ "$DISK_USAGE" -gt 85 ]; then
+            echo "⚠️ Disk usage is above 85%" >> $GITHUB_STEP_SUMMARY
+          fi
+        continue-on-error: true
+
+      - name: Generate health report
+        run: |
+          echo "## Health Check: ${{ steps.env.outputs.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Application | ${{ steps.health.outputs.status == 'healthy' && '✅ Healthy' || '❌ Unhealthy' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Database | ${{ steps.db.outputs.status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Response Time | ${{ steps.performance.outputs.response_time }}s ${{ steps.performance.outputs.slow == 'true' && '⚠️' || '✅' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| SSL Certificate | ${{ steps.ssl.outputs.days_left }} days left ${{ steps.ssl.outputs.expiring == 'true' && '⚠️' || '✅' }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Alert on issues
+        if: steps.health.outputs.status == 'unhealthy' || steps.performance.outputs.slow == 'true' || steps.ssl.outputs.expiring == 'true'
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "⚠️ Health Check Alert: ${{ steps.env.outputs.name }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "⚠️ *Health Check Alert: ${{ steps.env.outputs.name }}*\n• Application: ${{ steps.health.outputs.status }}\n• Response Time: ${{ steps.performance.outputs.response_time }}s\n• SSL Days Left: ${{ steps.ssl.outputs.days_left }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+  # ============================================================================
+  # DEPENDENCY UPDATE CHECK
+  # ============================================================================
+  dependency-update:
+    name: Dependency Update
+    runs-on: ubuntu-latest
+    needs: determine-tasks
+    if: needs.determine-tasks.outputs.run_dependency == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          tools: composer:v2
+
+      - name: Check PHP updates
+        run: |
+          if [ -f composer.json ]; then
+            composer outdated --format=json > composer-outdated.json 2>/dev/null || true
+            echo "## PHP Dependency Updates" >> $GITHUB_STEP_SUMMARY
+            if [ -s composer-outdated.json ]; then
+              cat composer-outdated.json | jq -r '.installed[] | "- \(.name): \(.version) → \(.latest)"' >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "All dependencies up to date" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+      - name: Check npm updates
+        run: |
+          if [ -f package.json ]; then
+            npm outdated --json > npm-outdated.json 2>/dev/null || true
+            echo "## NPM Dependency Updates" >> $GITHUB_STEP_SUMMARY
+            if [ -s npm-outdated.json ]; then
+              cat npm-outdated.json | jq -r 'to_entries[] | "- \(.key): \(.value.current) → \(.value.latest)"' >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "All dependencies up to date" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+      - name: Create update PR if needed
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if there are critical updates
+          CRITICAL_UPDATES=false
+
+          # Check for security updates in composer
+          if [ -f composer-outdated.json ]; then
+            composer audit --format=json 2>/dev/null | jq -e '.advisories | length > 0' && CRITICAL_UPDATES=true || true
+          fi
+
+          if [ "$CRITICAL_UPDATES" = true ]; then
+            echo "Critical updates found - consider enabling Dependabot or Renovate"
+          fi
+
+  # ============================================================================
+  # SUMMARY NOTIFICATION
+  # ============================================================================
+  notify-summary:
+    name: Summary Notification
+    runs-on: ubuntu-latest
+    needs: [database-backup, cleanup-artifacts, security-scan, health-check]
+    if: always()
+    steps:
+      - name: Send daily summary
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "📊 Scheduled Tasks Summary",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "📊 ParkaLot Scheduled Tasks Summary"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Database Backup:*\n${{ needs.database-backup.result == 'success' && '✅ Success' || needs.database-backup.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Cleanup:*\n${{ needs.cleanup-artifacts.result == 'success' && '✅ Success' || needs.cleanup-artifacts.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Security Scan:*\n${{ needs.security-scan.result == 'success' && '✅ Success' || needs.security-scan.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Health Check:*\n${{ needs.health-check.result == 'success' && '✅ Success' || needs.health-check.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }}"
+                    }
+                  ]
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "Run ID: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|${{ github.run_id }}>"
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+        continue-on-error: true

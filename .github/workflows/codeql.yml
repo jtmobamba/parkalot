@@ -1,0 +1,96 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║            PARKALOT SYSTEM - CODEQL SECURITY ANALYSIS              ║
+# ║                                                                    ║
+# ║  Advanced security scanning for vulnerabilities and code quality  ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+name: CodeQL Analysis
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+
+jobs:
+  analyze:
+    name: Analyze Code
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript']
+        # Note: PHP is not directly supported by CodeQL, using JavaScript for frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          queries: security-extended,security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{matrix.language}}"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # PHP SECURITY SCAN (using PHPCS Security Audit)
+  # ─────────────────────────────────────────────────────────────────────
+  php-security:
+    name: PHP Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+
+      - name: Install security scanner
+        run: |
+          composer global require pheromone/phpcs-security-audit
+
+      - name: Run PHP security scan
+        run: |
+          ~/.composer/vendor/bin/phpcs --standard=~/.composer/vendor/pheromone/phpcs-security-audit/example_base_ruleset.xml \
+            --extensions=php \
+            --ignore=vendor,node_modules \
+            --report=json \
+            --report-file=phpcs-security-report.json \
+            . || true
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: php-security-report
+          path: phpcs-security-report.json
+          retention-days: 14
+        if: always()
+
+      - name: Check for critical issues
+        run: |
+          if [ -f phpcs-security-report.json ]; then
+            ERRORS=$(cat phpcs-security-report.json | jq '.totals.errors // 0')
+            if [ "$ERRORS" -gt 0 ]; then
+              echo "::warning::Found $ERRORS security issues in PHP code"
+            fi
+          fi

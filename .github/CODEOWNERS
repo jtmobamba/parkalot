@@ -1,0 +1,36 @@
+# ╔════════════════════════════════════════════════════════════════════╗
+# ║                    PARKALOT SYSTEM - CODEOWNERS                    ║
+# ║                                                                    ║
+# ║  Define code owners for automatic review assignment                ║
+# ╚════════════════════════════════════════════════════════════════════╝
+
+# Default owners for everything in the repo
+* @parkalot-team
+
+# API and Backend
+/api/ @backend-team
+/app/ @backend-team
+/config/ @backend-team
+
+# Frontend
+/public/*.html @frontend-team
+/public/js/ @frontend-team
+/public/css/ @frontend-team
+
+# Database
+*.sql @database-team @backend-team
+
+# Docker and DevOps
+Dockerfile @devops-team
+docker-compose*.yml @devops-team
+/.github/workflows/ @devops-team
+
+# Security-sensitive files
+/config/security.php @security-team @backend-team
+/app/utils/CSRFProtection.php @security-team
+
+# Tests
+/tests/ @qa-team @backend-team
+
+# Documentation
+*.md @docs-team
